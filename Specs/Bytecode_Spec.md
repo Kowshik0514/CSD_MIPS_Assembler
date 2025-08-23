@@ -1,5 +1,4 @@
 # File: Bytecode_Spec.md
-# Owner: Person A
 # Role: Language Architect
 # Description: Defines the binary bytecode format for our .vm files.
 

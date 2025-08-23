@@ -1,5 +1,4 @@
 # File: Language_Spec.md
-# Owner: Person A
 # Role: Language Architect
 # Description: Defines the human-readable text format for our stack assembly language (.stkasm).
 
