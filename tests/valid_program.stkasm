@@ -1,0 +1,12 @@
+# File: valid_program.stkasm
+# Role: Test Case Creator
+# Description: A valid program that should be assembled successfully.
+
+# Program to calculate (10 + 20)
+invoke main 0
+
+main:
+    iconst 10
+    iconst 20
+    iadd
+    ret

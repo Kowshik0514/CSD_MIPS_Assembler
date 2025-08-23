@@ -1,0 +1,8 @@
+# File: invalid_program.stkasm
+# Role: Test Case Creator
+# Description: An invalid program with a syntax error.
+
+# This program has a syntax error
+invoke main
+iconst ten   # 'ten' is not a valid number
+iadd
