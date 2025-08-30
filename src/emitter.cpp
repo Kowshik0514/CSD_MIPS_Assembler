@@ -14,16 +14,20 @@ void write_int32(std::vector<uint8_t>& vec, int32_t value) {
     vec.push_back((value >> 24) & 0xFF);
 }
 
-// --- Opcode Enum ---
+// --- Opcode Enum (Updated for Module 2) ---
 enum class Opcode : uint8_t {
     ICONST = 0x01,
     IADD   = 0x02,
     INVOKE = 0x03,
     RET    = 0x04,
+    // MODULE 2 
+    ISUB   = 0x05,
+    IMUL   = 0x06,
+    IDIV   = 0x07,
+    JMP    = 0x08,
 };
 
-
-// --- Implementation of emit() for each instruction class ---
+// --- Implementation of emit() for existing instruction classes ---
 
 std::vector<uint8_t> IConst::emit(const SymbolTable& symbols) const {
     std::vector<uint8_t> bytecode;
@@ -40,23 +44,55 @@ std::vector<uint8_t> Ret::emit(const SymbolTable& symbols) const {
     return { static_cast<uint8_t>(Opcode::RET) };
 }
 
+
 std::vector<uint8_t> Invoke::emit(const SymbolTable& symbols) const {
     std::vector<uint8_t> bytecode;
     bytecode.push_back(static_cast<uint8_t>(Opcode::INVOKE));
 
-    // Look up the label in the symbol table to get its address/ID
-    auto it = symbols.find(this->label);
-    if (it == symbols.end()) {
+    // Look up the label using the new, safer get_address method.
+    auto address_opt = symbols.get_address(this->label);
+    if (!address_opt) {
+        // If the optional is empty, the symbol was not found.
         throw std::runtime_error("Undefined symbol referenced: " + this->label);
     }
-    uint32_t address = it->second;
     
-    write_int32(bytecode, address);
+    // Dereference the optional with * to get the address and write it.
+    write_int32(bytecode, *address_opt);
     bytecode.push_back(this->num_args);
     
     return bytecode;
 }
 
+// MODULE 2
+
+std::vector<uint8_t> ISub::emit(const SymbolTable& symbols) const {
+    return { static_cast<uint8_t>(Opcode::ISUB) };
+}
+
+std::vector<uint8_t> IMul::emit(const SymbolTable& symbols) const {
+    return { static_cast<uint8_t>(Opcode::IMUL) };
+}
+
+std::vector<uint8_t> IDiv::emit(const SymbolTable& symbols) const {
+    return { static_cast<uint8_t>(Opcode::IDIV) };
+}
+
+// ** NEW and uses the new SymbolTable class **
+std::vector<uint8_t> Jmp::emit(const SymbolTable& symbols) const {
+    std::vector<uint8_t> bytecode;
+    bytecode.push_back(static_cast<uint8_t>(Opcode::JMP));
+
+    // Look up the label using the new get_address method.
+    auto address_opt = symbols.get_address(this->label);
+    if (!address_opt) {
+        throw std::runtime_error("Undefined symbol referenced: " + this->label);
+    }
+    
+    // Dereference the optional to get the address and write it.
+    write_int32(bytecode, *address_opt);
+    
+    return bytecode;
+}
 
 // --- Implementation of the main emitter function ---
 
