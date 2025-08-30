@@ -1,6 +1,7 @@
 // Description: Implementation of the parser for the .stkasm language.
 
 #include "parser.h"
+#include "symbol_table.h" // ** INCLUDE THE NEW SYMBOL TABLE **
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -15,6 +16,7 @@ std::string trim(const std::string &str)
     return str.substr(first, (last - first + 1));
 }
 
+// ** The return type is now the new SymbolTable class **
 std::pair<std::vector<std::unique_ptr<Instruction>>, SymbolTable> parse_file(const std::string &filepath)
 {
     std::ifstream file(filepath);
@@ -24,11 +26,12 @@ std::pair<std::vector<std::unique_ptr<Instruction>>, SymbolTable> parse_file(con
     }
 
     std::vector<std::unique_ptr<Instruction>> instructions;
-    SymbolTable symbols;
+    SymbolTable symbols; // ** Use the new SymbolTable object **
     std::string line;
     int line_num = 0;
+    int instruction_count = 0; // Use a dedicated counter for instruction addresses
 
-    // First Pass: Find all labels
+    // First Pass: Find all labels and count instructions
     while (std::getline(file, line))
     {
         line_num++;
@@ -39,23 +42,25 @@ std::pair<std::vector<std::unique_ptr<Instruction>>, SymbolTable> parse_file(con
         if (cleaned_line.back() == ':')
         {
             std::string label = cleaned_line.substr(0, cleaned_line.length() - 1);
-            symbols[label] = instructions.size(); // Label points to the next instruction index
+            // ** Use the add_label method and check for duplicates **
+            if (!symbols.add_label(label, instruction_count))
+            {
+                throw std::runtime_error("L" + std::to_string(line_num) + ": Duplicate symbol definition '" + label + "'.");
+            }
         }
         else
         {
-            // This is a placeholder for an instruction
-            // We just need to count instructions in the first pass
-            instructions.push_back(nullptr);
+            // Only increment the instruction count for actual instruction lines
+            instruction_count++;
         }
     }
 
     // Reset for second pass
-    instructions.clear();
     file.clear();
     file.seekg(0, std::ios::beg);
     line_num = 0;
 
-    // Second Pass: Parse instructions
+    // Second Pass: Parse instructions into objects
     while (std::getline(file, line))
     {
         line_num++;
@@ -68,9 +73,10 @@ std::pair<std::vector<std::unique_ptr<Instruction>>, SymbolTable> parse_file(con
         }
         line = trim(line);
 
+        // Skip empty lines and label definitions
         if (line.empty() || line.back() == ':')
         {
-            continue; // Skip empty lines and label definitions
+            continue;
         }
 
         std::stringstream ss(line);
@@ -87,6 +93,26 @@ std::pair<std::vector<std::unique_ptr<Instruction>>, SymbolTable> parse_file(con
         else if (mnemonic == "iadd")
         {
             instructions.push_back(std::make_unique<IAdd>());
+        }
+        // ** NEW PARSING LOGIC FOR MODULE 2 **
+        else if (mnemonic == "isub")
+        {
+            instructions.push_back(std::make_unique<ISub>());
+        }
+        else if (mnemonic == "imul")
+        {
+            instructions.push_back(std::make_unique<IMul>());
+        }
+        else if (mnemonic == "idiv")
+        {
+            instructions.push_back(std::make_unique<IDiv>());
+        }
+        else if (mnemonic == "jmp")
+        {
+            std::string label;
+            if (!(ss >> label))
+                throw std::runtime_error("L" + std::to_string(line_num) + ": 'jmp' expects a label argument.");
+            instructions.push_back(std::make_unique<Jmp>(label));
         }
         else if (mnemonic == "invoke")
         {
