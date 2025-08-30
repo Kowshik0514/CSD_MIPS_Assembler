@@ -1,11 +1,5 @@
-# File: Makefile
-# Owner: Team
-# Role: Build Script
-# Description: Compiles the C++ source files into two separate executables.
-
 # Compiler and flags
 CXX = g++
-# Use C++17 standard, enable all warnings, include the 'src' directory
 CXXFLAGS = -std=c++17 -Wall -I./src
 
 # --- Target 1: The Assembler ---
@@ -18,21 +12,34 @@ VALIDATOR_SRCS = validator.cpp src/parser.cpp src/emitter.cpp
 VALIDATOR_OBJS = $(VALIDATOR_SRCS:.cpp=.o)
 VALIDATOR_TARGET = validator
 
-# Default rule: build everything
+# --- Source files for assembly in tests folder ---
+ASM_FOLDER = tests
+ASM_FILES = $(wildcard $(ASM_FOLDER)/*.stkasm)
+VM_FILES = $(ASM_FILES:$(ASM_FOLDER)/%.stkasm=%.vm)
+
+# Default: build executables
 all: $(ASSEMBLER_TARGET) $(VALIDATOR_TARGET)
 
-# Rule to link the assembler
+# Build assembler
 $(ASSEMBLER_TARGET): $(ASSEMBLER_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Rule to link the validator
+# Build validator
 $(VALIDATOR_TARGET): $(VALIDATOR_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Generic rule to compile any .cpp file into a .o file
+# Compile any .cpp file to .o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up build files
+# Generate .vm files from .stkasm files in tests folder
+%.vm: $(ASM_FOLDER)/%.stkasm $(ASSEMBLER_TARGET)
+	./$(ASSEMBLER_TARGET) $< $@
+
+# Optional: build all VM files
+.PHONY: vm
+vm: $(VM_FILES)
+
+# Clean build artifacts
 clean:
-	rm -f src/*.o *.o $(ASSEMBLER_TARGET) $(VALIDATOR_TARGET)
+	rm -f src/*.o *.o $(ASSEMBLER_TARGET) $(VALIDATOR_TARGET) *.vm stdout
