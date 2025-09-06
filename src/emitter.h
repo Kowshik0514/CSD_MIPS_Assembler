@@ -11,6 +11,6 @@
 #include <cstdint>
 
 // Takes a complete AssemblyUnit and returns the binary for a relocatable object file (.o).
-std::vector<uint8_t> emit_object_file(const AssemblyUnit& unit);
+std::vector<uint8_t> emit_object_file(const AssemblyUnit &unit);
 
 #endif

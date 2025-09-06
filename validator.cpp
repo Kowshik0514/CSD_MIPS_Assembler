@@ -4,6 +4,7 @@
 // Description: C++ script to test the parser against all files in the tests/ directory.
 
 #include "parser.h"
+#include "structures.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,23 +24,30 @@ int main() {
             bool should_fail = path.filename().string().find("invalid") != std::string::npos;
 
             try {
-                auto result = parse_file(path.string());
+                AssemblyUnit result = parse_file(path.string());
                 if (should_fail) {
                     std::cout << "    \x1B[31mFAILED: Invalid file was parsed without errors.\x1B[0m" << std::endl;
                     failed_count++;
                 } else {
-                    std::cout << "    \x1B[32mPASSED: Parsed " << result.first.size() << " instructions and " << result.second.size() << " symbols.\x1B[0m" << std::endl;
+                    std::cout << "    \x1B[32mPASSED: Parsed "
+                              << result.instructions.size() << " instructions, "
+                              << result.symbol_table.size() << " symbols, "
+                              << result.data_entries.size() << " data entries.\x1B[0m"
+                              << std::endl;
                 }
             } catch (const std::runtime_error& e) {
                 if (should_fail) {
-                    std::cout << "    \x1B[32mPASSED: Invalid file correctly raised an error: " << e.what() << "\x1B[0m" << std::endl;
+                    std::cout << "    \x1B[32mPASSED: Invalid file correctly raised an error: "
+                              << e.what() << "\x1B[0m" << std::endl;
                 } else {
-                    std::cout << "    \x1B[31mFAILED: Valid file raised an unexpected error: " << e.what() << "\x1B[0m" << std::endl;
+                    std::cout << "    \x1B[31mFAILED: Valid file raised an unexpected error: "
+                              << e.what() << "\x1B[0m" << std::endl;
                     failed_count++;
                 }
             }
         }
     }
+
     std::cout << "--- Validator Finished ---" << std::endl;
-    return failed_count; // Return 0 on success
+    return failed_count; // 0 = success, >0 = failures
 }

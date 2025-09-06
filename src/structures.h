@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <memory>
 
-
 // Represents a single symbol (label or variable).
 struct Symbol
 {

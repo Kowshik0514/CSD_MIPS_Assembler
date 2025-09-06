@@ -1,8 +1,13 @@
+// File: symbol_table.cpp
+// Owner: Rashmitha
+// Role: Symbol Table Implementation
+// Description: Implements the Symbol Table logic.
+
 #include "symbol_table.h"
 
 bool SymbolTable::add_label(const std::string& name, uint32_t address) {
     if (table.count(name)) {
-        return false; 
+        return false; // Symbol already exists
     }
     table[name] = {name, address, SymbolType::LABEL};
     return true;
