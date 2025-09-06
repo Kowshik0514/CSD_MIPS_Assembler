@@ -1,83 +1,117 @@
 // File: structures.h
-// Owner: Person CS22B015 Kowshik
-// Role: Bytecode & Back-end
-// Description: Defines the core C++ data structures for all instructions.
+// Owner: Rashmitha
+// Role: Data Structures for Assembler & Linker
+// Description: Defines the core C++ data structures for all instructions, directives,
+//              and the components of a relocatable object file (.o).
 
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-#include "symbol_table.h"
 #include <string>
 #include <vector>
 #include <cstdint>
 #include <memory>
 
-// ** The old "using SymbolTable = std::map<...>" line is now REMOVED. **
-// We now use the powerful SymbolTable class defined in symbol_table.h
 
-// Base class for all instructions
-class Instruction {
-public:
-    virtual ~Instruction() = default;
-    // The emit function now takes a constant reference to the new SymbolTable class.
-    virtual std::vector<uint8_t> emit(const SymbolTable& symbols) const = 0;
+// Represents a single symbol (label or variable).
+struct Symbol
+{
+    enum class Type
+    {
+        TEXT,
+        DATA
+    };
+    enum class Binding
+    {
+        LOCAL,
+        GLOBAL
+    };
+
+    std::string name;
+    Type type;
+    Binding binding = Binding::LOCAL; // Symbols are local by default.
+    uint32_t address;                 // Address within its section.
 };
 
-// Represents an 'iconst <value>' instruction
-class IConst : public Instruction {
+// Represents an entry in the data section.
+struct DataEntry
+{
+    std::string name;
+    int32_t value;
+};
+
+// Represents a relocation entry. Tells the linker where to patch an address.
+struct RelocationEntry
+{
+    uint32_t offset;           // Byte offset in the code section that needs patching.
+    std::string target_symbol; // The global symbol whose address should be patched in.
+};
+
+// A container for all the parsed information from a single .stkasm file.
+struct AssemblyUnit
+{
+    std::vector<std::unique_ptr<class Instruction>> instructions;
+    std::vector<DataEntry> data_entries;
+    std::vector<Symbol> symbol_table;
+};
+
+// Base class for all instructions
+class Instruction
+{
+public:
+    virtual ~Instruction() = default;
+    // The emit function now helps generate relocation entries.
+    virtual std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const = 0;
+};
+
+// Instruction Classes (IConst, IAdd, ISub, IMul, IDiv, Ret, Jmp, Invoke)
+// ... class definitions are the same as in the previous response ...
+class IConst : public Instruction
+{
 public:
     int32_t value;
     explicit IConst(int32_t val) : value(val) {}
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// Represents an 'iadd' instruction
-class IAdd : public Instruction {
+class IAdd : public Instruction
+{
 public:
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// Module 2
-// Represents an 'isub' instruction
-class ISub : public Instruction {
+class ISub : public Instruction
+{
 public:
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// Represents an 'imul' instruction
-class IMul : public Instruction {
+class IMul : public Instruction
+{
 public:
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// Represents an 'idiv' instruction
-class IDiv : public Instruction {
+class IDiv : public Instruction
+{
 public:
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// Represents a 'jmp <label>' instruction
-class Jmp : public Instruction {
+class Ret : public Instruction
+{
+public:
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
+};
+class Jmp : public Instruction
+{
 public:
     std::string label;
-    explicit Jmp(const std::string& lbl) : label(lbl) {}
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    explicit Jmp(const std::string &lbl) : label(lbl) {}
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-
-// Represents an 'invoke <label> <num_args>' instruction
-class Invoke : public Instruction {
+class Invoke : public Instruction
+{
 public:
     std::string label;
     uint8_t num_args;
-    Invoke(const std::string& lbl, uint8_t args) : label(lbl), num_args(args) {}
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
+    Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {}
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
-// Represents a 'ret' instruction
-class Ret : public Instruction {
-public:
-    std::vector<uint8_t> emit(const SymbolTable& symbols) const override;
-};
-
-#endif
+#endif // STRUCTURES_H
