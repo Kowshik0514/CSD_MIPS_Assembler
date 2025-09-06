@@ -4,6 +4,7 @@ Module: 3 (Linker Core Logic & Design)
 Date: September 6, 2025
 Cited Source: MIPS_Assembler_Specification Document.pdf
 
+
 1. High-Level Overview 
 The linker is a command-line tool that is the second stage of our toolchain. Its primary role is to combine one or more relocatable object files (.o), which are produced by the assembler, into a single, fully-resolved executable file (.vm).
 
@@ -47,7 +48,8 @@ Code Section	Variable	The final, fully-resolved and patched bytecode.
 Data Section	Variable	The final, combined static data.
 
 Export to Sheets
-3. Core Linking Algorithm ⚙
+
+3. Core Linking Algorithm 
 The linker will execute the following steps in a strict sequence:
 
 Parse Command-Line Arguments:
@@ -89,7 +91,6 @@ If the symbol is LOCAL, we can ignore it for the global table, as it won't be re
 Update the offsets for the next file: current_code_offset += file.code_section.size() and current_data_offset += file.data_section.size().
 
 Perform Relocation:
-
 Create two large byte vectors: final_code_section and final_data_section.
 
 Initialize current_code_offset = 0 for tracking the base of the current file being processed.
