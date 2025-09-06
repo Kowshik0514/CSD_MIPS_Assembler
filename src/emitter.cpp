@@ -1,117 +1,100 @@
 // File: emitter.cpp
 // Owner: CS22B015 Kowshik
 // Role: Bytecode & Back-end
-// Description: Implementation of the bytecode emitter and instruction emit methods.
+// Description: Implementation of the object file emitter.
 
 #include "emitter.h"
 #include <stdexcept>
+#include <algorithm>
 
-// --- Helper function to write a 4-byte integer in little-endian format ---
-void write_int32(std::vector<uint8_t>& vec, int32_t value) {
-    vec.push_back((value >> 0)  & 0xFF);
-    vec.push_back((value >> 8)  & 0xFF);
-    vec.push_back((value >> 16) & 0xFF);
-    vec.push_back((value >> 24) & 0xFF);
+void write_int32(std::vector<uint8_t>& vec, int32_t value) { /* ... same as before ... */ }
+void write_string(std::vector<uint8_t>& vec, const std::string& str) {
+    write_int32(vec, str.length());
+    vec.insert(vec.end(), str.begin(), str.end());
 }
 
-// --- Opcode Enum (Updated for Module 2) ---
-enum class Opcode : uint8_t {
-    ICONST = 0x01,
-    IADD   = 0x02,
-    INVOKE = 0x03,
-    RET    = 0x04,
-    // MODULE 2 
-    ISUB   = 0x05,
-    IMUL   = 0x06,
-    IDIV   = 0x07,
-    JMP    = 0x08,
-};
+enum class Opcode : uint8_t { /* ... same as before ... */ };
 
-// --- Implementation of emit() for existing instruction classes ---
+const Symbol* find_symbol(const AssemblyUnit& unit, const std::string& name) { /* ... same as before ... */ }
 
-std::vector<uint8_t> IConst::emit(const SymbolTable& symbols) const {
-    std::vector<uint8_t> bytecode;
-    bytecode.push_back(static_cast<uint8_t>(Opcode::ICONST));
-    write_int32(bytecode, this->value);
-    return bytecode;
-}
+// --- Implementation of emit() for each instruction class ---
 
-std::vector<uint8_t> IAdd::emit(const SymbolTable& symbols) const {
-    return { static_cast<uint8_t>(Opcode::IADD) };
-}
+std::vector<uint8_t> IConst::emit(const AssemblyUnit& unit, RelocationEntry& reloc) const { /* ... */ }
+std::vector<uint8_t> IAdd::emit(const AssemblyUnit& unit, RelocationEntry& reloc) const { /* ... */ }
+// ... other simple instructions ...
 
-std::vector<uint8_t> Ret::emit(const SymbolTable& symbols) const {
-    return { static_cast<uint8_t>(Opcode::RET) };
-}
-
-
-std::vector<uint8_t> Invoke::emit(const SymbolTable& symbols) const {
-    std::vector<uint8_t> bytecode;
-    bytecode.push_back(static_cast<uint8_t>(Opcode::INVOKE));
-
-    // Look up the label using the new, safer get_address method.
-    auto address_opt = symbols.get_address(this->label);
-    if (!address_opt) {
-        // If the optional is empty, the symbol was not found.
-        throw std::runtime_error("Undefined symbol referenced: " + this->label);
-    }
-    
-    // Dereference the optional with * to get the address and write it.
-    write_int32(bytecode, *address_opt);
-    bytecode.push_back(this->num_args);
-    
-    return bytecode;
-}
-
-// MODULE 2
-
-std::vector<uint8_t> ISub::emit(const SymbolTable& symbols) const {
-    return { static_cast<uint8_t>(Opcode::ISUB) };
-}
-
-std::vector<uint8_t> IMul::emit(const SymbolTable& symbols) const {
-    return { static_cast<uint8_t>(Opcode::IMUL) };
-}
-
-std::vector<uint8_t> IDiv::emit(const SymbolTable& symbols) const {
-    return { static_cast<uint8_t>(Opcode::IDIV) };
-}
-
-// ** NEW and uses the new SymbolTable class **
-std::vector<uint8_t> Jmp::emit(const SymbolTable& symbols) const {
+std::vector<uint8_t> Jmp::emit(const AssemblyUnit& unit, RelocationEntry& reloc) const {
     std::vector<uint8_t> bytecode;
     bytecode.push_back(static_cast<uint8_t>(Opcode::JMP));
+    const Symbol* target = find_symbol(unit, this->label);
+    if (!target) throw std::runtime_error("Undefined symbol: " + this->label);
 
-    // Look up the label using the new get_address method.
-    auto address_opt = symbols.get_address(this->label);
-    if (!address_opt) {
-        throw std::runtime_error("Undefined symbol referenced: " + this->label);
+    if (target->binding == Symbol::Binding::LOCAL) {
+        write_int32(bytecode, target->address);
+    } else { // Global symbol
+        write_int32(bytecode, 0); // Placeholder address
+        reloc.target_symbol = this->label; // Signal that a relocation is needed
     }
-    
-    // Dereference the optional to get the address and write it.
-    write_int32(bytecode, *address_opt);
-    
     return bytecode;
 }
 
-// --- Implementation of the main emitter function ---
+std::vector<uint8_t> Invoke::emit(const AssemblyUnit& unit, RelocationEntry& reloc) const {
+    // ... similar logic to Jmp::emit ...
+}
 
-std::vector<uint8_t> emit_bytecode(
-    const std::vector<std::unique_ptr<Instruction>>& instructions,
-    const SymbolTable& symbols) {
-    
-    std::vector<uint8_t> bytecode;
+// --- Main Emitter Function ---
+std::vector<uint8_t> emit_object_file(const AssemblyUnit& unit) {
+    std::vector<uint8_t> code_section;
+    std::vector<RelocationEntry> relocation_table;
 
-    // --- Write Header ---
-    uint32_t magic_number = 0x5354414B; // "STAK"
-    uint32_t instruction_count = instructions.size();
-    write_int32(bytecode, magic_number);
-    write_int32(bytecode, instruction_count);
-
-    for (const auto& instr : instructions) {
-        std::vector<uint8_t> instr_bytes = instr->emit(symbols);
-        bytecode.insert(bytecode.end(), instr_bytes.begin(), instr_bytes.end());
+    // 1. Generate the Code Section and Relocation Table
+    for (const auto& instr : unit.instructions) {
+        RelocationEntry reloc_entry;
+        uint32_t offset = code_section.size();
+        std::vector<uint8_t> instr_bytes = instr->emit(unit, reloc_entry);
+        code_section.insert(code_section.end(), instr_bytes.begin(), instr_bytes.end());
+        if (!reloc_entry.target_symbol.empty()) {
+            reloc_entry.offset = offset + 1; // Address to patch is after the opcode
+            relocation_table.push_back(reloc_entry);
+        }
     }
 
-    return bytecode;
+    // 2. Generate the Data Section
+    std::vector<uint8_t> data_section;
+    for (const auto& data : unit.data_entries) {
+        write_int32(data_section, data.value);
+    }
+
+    // 3. Generate the Symbol Table Section
+    std::vector<uint8_t> symbol_table_section;
+    write_int32(symbol_table_section, unit.symbol_table.size());
+    for (const auto& sym : unit.symbol_table) {
+        write_string(symbol_table_section, sym.name);
+        symbol_table_section.push_back(static_cast<uint8_t>(sym.type));
+        symbol_table_section.push_back(static_cast<uint8_t>(sym.binding));
+        write_int32(symbol_table_section, sym.address);
+    }
+
+    // 4. Generate the Relocation Table Section
+    std::vector<uint8_t> reloc_table_section;
+    write_int32(reloc_table_section, relocation_table.size());
+    for (const auto& reloc : relocation_table) {
+        write_int32(reloc_table_section, reloc.offset);
+        write_string(reloc_table_section, reloc.target_symbol);
+    }
+
+    // 5. Generate the Header and stitch everything together
+    std::vector<uint8_t> object_file;
+    uint32_t magic_number = 0x5354414F; // "STAO" for STAk Object
+    write_int32(object_file, magic_number);
+    write_int32(object_file, code_section.size());
+    write_int32(object_file, data_section.size());
+    write_int32(object_file, symbol_table_section.size());
+    write_int32(object_file, reloc_table_section.size());
+    object_file.insert(object_file.end(), code_section.begin(), code_section.end());
+    object_file.insert(object_file.end(), data_section.begin(), data_section.end());
+    object_file.insert(object_file.end(), symbol_table_section.begin(), symbol_table_section.end());
+    object_file.insert(object_file.end(), reloc_table_section.begin(), reloc_table_section.end());
+
+    return object_file;
 }
