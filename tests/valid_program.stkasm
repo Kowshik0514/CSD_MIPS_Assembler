@@ -1,12 +1,15 @@
-# File: valid_program.stkasm
-# Role: Test Case Creator
-# Description: A valid program that should be assembled successfully.
+# FILE: math.stkasm
+# DESC: A simple math library that provides a 'multiply' function.
 
-# Program to calculate (10 + 20)
-invoke main 0
+# --- DATA SECTION ---
+# This library has its own private data.
+.data
+    .static version_number 100 # Represents version 1.00
 
-main:
-    iconst 10
-    iconst 20
-    iadd
+# --- TEXT (CODE) SECTION ---
+.text
+    .global multiply
+
+multiply:
+    imul
     ret

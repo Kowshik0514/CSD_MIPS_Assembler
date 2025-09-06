@@ -1,3 +1,8 @@
+// File: symbol_table.h
+// Owner: Rashmitha
+// Role: Symbol Table Implementation
+// Description: Defines the interface for the Symbol Table module.
+
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 
