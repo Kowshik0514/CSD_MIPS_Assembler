@@ -1,0 +1,23 @@
+# File: variable_test.stkasm
+# Description: Tests the new istore and iload instructions.
+
+.data
+.static x 0  # Declare a variable 'x' in the data section
+.static y 0  # Declare a variable 'y'
+
+.text
+.global main
+
+main:
+    # This program calculates y = (x + 5), where x is initially 10.
+    # Expected result in y is 15.
+
+    iconst 10       # Push 10
+    istore x        # Store the value 10 into variable 'x'
+
+    iload x         # Load the value of 'x' (10) onto the stack
+    iconst 5        # Push 5
+    iadd            # Add them, result is 15
+    istore y        # Store the result 15 into variable 'y'
+
+    ret
