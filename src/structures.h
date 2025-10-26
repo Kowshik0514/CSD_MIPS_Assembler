@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <map>
 
 // Represents a single symbol (label or variable).
 struct Symbol
@@ -29,13 +30,13 @@ struct DataEntry {
     int32_t value;
 };
 
-// Represents a relocation entry. Tells the linker where to patch an address.
+// Represents a relocation entry.
 struct RelocationEntry {
     uint32_t offset;
     std::string target_symbol;
 };
 
-// A container for all parsed information from a single .stkasm file.
+// Container for parsed assembly file.
 struct AssemblyUnit {
     std::vector<std::unique_ptr<class Instruction>> instructions;
     std::vector<DataEntry> data_entries;
@@ -49,36 +50,43 @@ public:
     virtual std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const = 0;
 };
 
-// --- Existing Instruction Classes ---
+// --- Instruction Classes with INLINE CONSTRUCTORS ---
 class IConst : public Instruction {
 public:
     int32_t value;
+    // Define constructor inline
     explicit IConst(int32_t val) : value(val) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class IAdd : public Instruction {
 public:
+    // Default constructor is fine
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class ISub : public Instruction {
 public:
+    // Default constructor is fine
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class IMul : public Instruction {
 public:
+    // Default constructor is fine
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class IDiv : public Instruction {
 public:
+    // Default constructor is fine
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class Ret : public Instruction {
 public:
+    // Default constructor is fine
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class Jmp : public Instruction {
 public:
     std::string label;
+    // Define constructor inline
     explicit Jmp(const std::string &lbl) : label(lbl) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
@@ -86,25 +94,24 @@ class Invoke : public Instruction {
 public:
     std::string label;
     uint8_t num_args;
+    // Define constructor inline
     Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
-// --- NEW INSTRUCTION CLASSES FOR LOAD/STORE ---
 class IStore : public Instruction {
 public:
     std::string var_name;
+    // Define constructor inline
     explicit IStore(const std::string& name) : var_name(name) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
 class ILoad : public Instruction {
 public:
     std::string var_name;
+    // Define constructor inline
     explicit ILoad(const std::string& name) : var_name(name) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-
 
 // Represents a loaded .o file in memory.
 class ObjectFile {
@@ -116,5 +123,8 @@ public:
 
     static ObjectFile read_from(const std::string& filepath);
 };
+
+// Global Symbol Table Alias
+using GlobalSymbolTable = std::map<std::string, uint32_t>;
 
 #endif // STRUCTURES_H

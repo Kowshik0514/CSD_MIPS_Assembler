@@ -1,0 +1,6 @@
+.global multiply # DEFINE the 'multiply' function for others
+
+.text
+multiply:
+    imul
+    ret

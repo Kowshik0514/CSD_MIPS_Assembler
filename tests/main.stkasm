@@ -1,0 +1,9 @@
+.global main
+.global multiply # USE the external 'multiply' function
+
+.text
+main:
+    iconst 7
+    iconst 6
+    invoke multiply 2 # Call the function
+    ret
