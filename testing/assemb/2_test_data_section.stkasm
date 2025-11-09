@@ -1,0 +1,11 @@
+# Test data section and static variable definition
+.data
+    .static my_var1 100
+    .static my_var2 -50
+
+.text
+.global main
+main:
+    # This code doesn't use the data, but the assembler must process it.
+    iconst 0
+    ret

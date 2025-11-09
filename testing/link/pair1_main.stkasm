@@ -1,0 +1,7 @@
+.global main
+.global simple_func # Declare external function
+
+.text
+main:
+    invoke simple_func 0 # Call the function
+    ret 

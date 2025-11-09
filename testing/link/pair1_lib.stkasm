@@ -1,0 +1,6 @@
+.global simple_func # Define the function
+
+.text
+simple_func:
+    iconst 100
+    ret

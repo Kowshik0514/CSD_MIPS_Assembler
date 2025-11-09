@@ -1,0 +1,10 @@
+.global main
+.global func_a
+.global func_b
+
+.text
+main:
+    invoke func_a 0
+    invoke func_b 0
+    iadd           # Add results of func_a and func_b
+    ret

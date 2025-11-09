@@ -1,0 +1,10 @@
+.data
+    .static app_data 5
+.global main
+.global lib_func
+
+.text
+main:
+    iload app_data
+    invoke lib_func 1 # Pass app_data value to lib_func
+    ret

@@ -47,10 +47,10 @@ int main(int argc, char* argv[]) {
         outfile.write(reinterpret_cast<const char*>(executable_bytecode.data()), executable_bytecode.size());
         outfile.close(); // Ensure file is closed properly
 
-        std::cout << "✅ Linker finished successfully." << std::endl;
+        std::cout << "Linker finished successfully." << std::endl;
 
     } catch (const std::runtime_error& e) {
-        std::cerr << "❌ Linker failed: " << e.what() << std::endl;
+        std::cerr << "Linker failed: " << e.what() << std::endl;
         return 1; // Indicate failure
     }
 

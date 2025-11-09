@@ -1,0 +1,47 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+5e 00 00 00  // Code Section Size: 94 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+13 00 00 00  // Symbol Table Size: 19 bytes
+04 00 00 00  // Relocation Table Size: 4 bytes
+
+// --- Code Section (94 bytes) ---
+// main: (address 0x0)
+01 05 00 00 00  // iconst 5
+10  // NEW_ARRAY
+09 00 00 00 00  // istore 0      # arr1 pointer in local 0
+01 03 00 00 00  // iconst 3
+10  // NEW_ARRAY
+09 01 00 00 00  // istore 1      # arr2 pointer in local 1
+01 64 00 00 00  // iconst 100    # Value
+01 02 00 00 00  // iconst 2      # Index
+0a 00 00 00 00  // iload 0       # Pointer
+11  // SET_ELEM
+01 c8 00 00 00  // iconst 200    # Value
+01 01 00 00 00  // iconst 1      # Index
+0a 01 00 00 00  // iload 1       # Pointer
+11  // SET_ELEM
+01 02 00 00 00  // iconst 2      # Index for arr1[2]
+0a 00 00 00 00  // iload 0       # Pointer for arr1
+12  // GET_ELEM      # Pops index, ptr; Pushes 100
+01 01 00 00 00  // iconst 1      # Index for arr2[1]
+0a 01 00 00 00  // iload 1       # Pointer for arr2
+12  // GET_ELEM      # Pops index, ptr; Pushes 200
+02  // iadd          # Pops 200, pops 100; Pushes 300
+09 02 00 00 00  // istore 2      # Store result (300) in local 2
+0a 02 00 00 00  // iload 2       # Load c (300)
+30  // PRINT_I       # Print the integer
+01 00 00 00 00  // iconst 0
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (19 bytes) ---
+// (Raw symbol table data follows...)
+01 00 00 00 04 00 00 00 6d 61 69 6e 00 01 01 00 00 00 00 
+
+// --- Relocation Table Section (4 bytes) ---
+// (Raw relocation table data follows...)
+00 00 00 00 
+// (No relocation entries)

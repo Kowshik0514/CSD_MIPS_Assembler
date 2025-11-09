@@ -1,0 +1,11 @@
+.global func_a
+.global func_b
+
+.text
+func_a:
+    iconst 30
+    ret
+
+func_b:
+    iconst 12
+    ret

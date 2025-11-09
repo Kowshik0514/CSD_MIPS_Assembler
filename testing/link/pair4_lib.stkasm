@@ -1,0 +1,9 @@
+.data
+    .static lib_data 10
+.global lib_func
+
+.text
+lib_func: # Expects one argument on stack
+    iload lib_data
+    iadd       # Add argument (from app_data) + lib_data
+    ret

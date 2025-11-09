@@ -1,0 +1,14 @@
+.text
+.global main
+
+main:
+    iconst 7
+    iconst 6
+    iadd
+    jmp label
+    iconst 20
+
+label:
+    iconst 12
+    isub
+    ret

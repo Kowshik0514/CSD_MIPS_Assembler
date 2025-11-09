@@ -1,0 +1,10 @@
+# Test syntax errors
+.text
+.global main
+main:
+    iconst 10 20   # ERROR: Too many arguments
+    iadd 1         # ERROR: Unexpected argument
+    ret
+
+.data           # ERROR: Section declared after instructions
+.static bad 0

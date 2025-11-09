@@ -1,0 +1,23 @@
+# Test istore and iload
+.data
+    .static counter 0
+    .static result 0
+
+.text
+.global main
+main:
+    iconst 10
+    istore counter  # counter = 10
+
+    iload counter   # Push 10
+    iconst 2
+    imul            # Stack: [20]
+    istore result   # result = 20
+
+    iload result    # Push 20
+    ret             # Return 20
+
+loop:
+    iconst 20
+    istore counter 
+    iload counter 

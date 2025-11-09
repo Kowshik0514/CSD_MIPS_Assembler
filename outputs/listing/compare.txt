@@ -1,0 +1,29 @@
+--- Assembly Listing ---
+Source file: compare.stkasm
+
+--- .text section ---
+Address  | Bytes                | Source Line
+------------------------------------------------------------------
+0x00000000 | 01 0a 00 00 00       | iconst 10
+0x50000000 | 01 05 00 00 00       | iconst 5
+0xa0000000 | 22                   | icmp_gt         # Pushes 1 (true) since 10 > 5
+0xb0000000 | 23 1b 00 00 00       | jmp_if_false else_block
+0x10000000 | 01 01 00 00 00       | iconst 1
+0x15000000 | 30                   | PRINT_I
+0x16000000 | 07 21 00 00 00       | jmp end_if
+0x1b000000 | 01 00 00 00 00       | iconst 0
+0x20000000 | 30                   | PRINT_I
+0x21000000 | 01 00 00 00 00       | iconst 0
+0x26000000 | 06                   | ret
+
+--- .data section ---
+Address  | Bytes             | Definition
+--------------------------------------------------------
+
+--- Symbol Table ---
+Name           | Type | Binding | Def | Address
+--------------------------------------------------------
+main           | TEXT | GLOBAL  | yes | 0x00000000
+if_block       | TEXT | LOCAL   | yes | 0x10000000
+else_block     | TEXT | LOCAL   | yes | 0x1b000000
+end_if         | TEXT | LOCAL   | yes | 0x21000000

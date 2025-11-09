@@ -1,16 +1,17 @@
 // File: emitter.cpp
 // Owner: CS22B015 Kowshik
 // Role: Bytecode & Back-end
-// Description: Fully corrected implementation of the object file emitter.
+// Description: Fully updated implementation of the object file emitter.
 
 #include "emitter.h"
 #include "structures.h"
 #include <stdexcept>
 #include <algorithm>
-#include <vector> // Ensure vector is included
+#include <vector>
 
 // --- Helper functions ---
 void write_int32(std::vector<uint8_t> &vec, int32_t value) {
+    // Write 4 bytes in little-endian format
     vec.push_back(static_cast<uint8_t>((value >> 0)  & 0xFF));
     vec.push_back(static_cast<uint8_t>((value >> 8)  & 0xFF));
     vec.push_back(static_cast<uint8_t>((value >> 16) & 0xFF));
@@ -22,10 +23,29 @@ void write_string(std::vector<uint8_t> &vec, const std::string &str) {
     vec.insert(vec.end(), str.begin(), str.end());
 }
 
-// --- Opcodes ---
+// --- NEW Complete Opcode Enum ---
 enum class Opcode : uint8_t {
-    ICONST = 0x01, IADD = 0x02, ISUB = 0x03, IMUL = 0x04, IDIV = 0x05,
-    RET = 0x06, JMP = 0x07, INVOKE = 0x08, ISTORE = 0x09, ILOAD = 0x0A
+    ICONST = 0x01,
+    IADD   = 0x02,
+    ISUB   = 0x03,
+    IMUL   = 0x04,
+    IDIV   = 0x05,
+    RET    = 0x06,
+    JMP    = 0x07,
+    INVOKE = 0x08,
+    ISTORE = 0x09,
+    ILOAD  = 0x0A,
+    
+    NEW_ARRAY = 0x10,
+    SET_ELEM  = 0x11,
+    GET_ELEM  = 0x12,
+    
+    ICMP_EQ = 0x20,
+    ICMP_LT = 0x21,
+    ICMP_GT = 0x22,
+    JMP_IF_FALSE = 0x23,
+
+    PRINT_I = 0x30
 };
 
 // --- Symbol lookup ---
@@ -44,60 +64,65 @@ std::vector<uint8_t> IConst::emit(const AssemblyUnit &, RelocationEntry &) const
     write_int32(code, value);
     return code;
 }
+// Arithmetic
 std::vector<uint8_t> IAdd::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IADD) }; }
 std::vector<uint8_t> ISub::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ISUB) }; }
 std::vector<uint8_t> IMul::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IMUL) }; }
 std::vector<uint8_t> IDiv::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IDIV) }; }
+// Control Flow
 std::vector<uint8_t> Ret::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::RET) }; }
 
-std::vector<uint8_t> Jmp::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
+// Helper for Jmp, Invoke, JmpIfFalse
+static std::vector<uint8_t> emit_jump_instruction(uint8_t opcode, const AssemblyUnit &unit, RelocationEntry &reloc, const std::string& label) {
     std::vector<uint8_t> code;
-    code.push_back(static_cast<uint8_t>(Opcode::JMP));
+    code.push_back(opcode);
     const Symbol *target = find_symbol(unit, label);
+    // Create relocation entry if symbol is not a defined local
     if (target && target->is_defined && target->binding == Symbol::Binding::LOCAL) {
         write_int32(code, target->address);
-    } else { // For global or undefined symbols, create relocation entry
-        write_int32(code, 0);
-        reloc.target_symbol = label;
+    } else { 
+        write_int32(code, 0); // Write placeholder
+        reloc.target_symbol = label; // Create relocation entry
     }
     return code;
 }
 
+std::vector<uint8_t> Jmp::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
+    return emit_jump_instruction(static_cast<uint8_t>(Opcode::JMP), unit, reloc, label);
+}
+std::vector<uint8_t> JmpIfFalse::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
+    return emit_jump_instruction(static_cast<uint8_t>(Opcode::JMP_IF_FALSE), unit, reloc, label);
+}
 std::vector<uint8_t> Invoke::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
-    std::vector<uint8_t> code;
-    code.push_back(static_cast<uint8_t>(Opcode::INVOKE));
-    const Symbol *target = find_symbol(unit, label);
-    if (target && target->is_defined && target->binding == Symbol::Binding::LOCAL) {
-        write_int32(code, target->address);
-    } else { // For global or undefined symbols, create relocation entry
-        write_int32(code, 0);
-        reloc.target_symbol = label;
-    }
+    std::vector<uint8_t> code = emit_jump_instruction(static_cast<uint8_t>(Opcode::INVOKE), unit, reloc, label);
     code.push_back(num_args);
     return code;
 }
 
-std::vector<uint8_t> IStore::emit(const AssemblyUnit &unit, RelocationEntry &) const {
+// Local Variables (by index)
+std::vector<uint8_t> IStore::emit(const AssemblyUnit &, RelocationEntry &) const {
     std::vector<uint8_t> code;
     code.push_back(static_cast<uint8_t>(Opcode::ISTORE));
-    const Symbol* sym = find_symbol(unit, var_name);
-    if (!sym || sym->type != Symbol::Type::DATA) {
-        throw std::runtime_error("Cannot store to non-data symbol: " + var_name);
-    }
-    write_int32(code, sym->address);
+    write_int32(code, index);
+    return code;
+}
+std::vector<uint8_t> ILoad::emit(const AssemblyUnit &, RelocationEntry &) const {
+    std::vector<uint8_t> code;
+    code.push_back(static_cast<uint8_t>(Opcode::ILOAD));
+    write_int32(code, index);
     return code;
 }
 
-std::vector<uint8_t> ILoad::emit(const AssemblyUnit &unit, RelocationEntry &) const {
-    std::vector<uint8_t> code;
-    code.push_back(static_cast<uint8_t>(Opcode::ILOAD));
-    const Symbol* sym = find_symbol(unit, var_name);
-    if (!sym || sym->type != Symbol::Type::DATA) {
-        throw std::runtime_error("Cannot load from non-data symbol: " + var_name);
-    }
-    write_int32(code, sym->address);
-    return code;
-}
+// Arrays
+std::vector<uint8_t> NewArray::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::NEW_ARRAY) }; }
+std::vector<uint8_t> SetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::SET_ELEM) }; }
+std::vector<uint8_t> GetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::GET_ELEM) }; }
+// Conditionals
+std::vector<uint8_t> ICmpEQ::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_EQ) }; }
+std::vector<uint8_t> ICmpLT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_LT) }; }
+std::vector<uint8_t> ICmpGT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_GT) }; }
+// I/O
+std::vector<uint8_t> PrintI::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_I) }; }
 
 
 // --- Main Emitter Function ---
@@ -127,11 +152,11 @@ std::vector<uint8_t> emit_object_file(const AssemblyUnit &unit) {
     std::vector<uint8_t> symbol_table_section;
     write_int32(symbol_table_section, unit.symbol_table.size());
     for (const auto &sym : unit.symbol_table) {
-        write_string(symbol_table_section, sym.name);                 // 1. Name
-        symbol_table_section.push_back(static_cast<uint8_t>(sym.type)); // 2. Type
-        symbol_table_section.push_back(static_cast<uint8_t>(sym.binding)); // 3. Binding
-        symbol_table_section.push_back(static_cast<uint8_t>(sym.is_defined)); // 4. is_defined FLAG <-- CORRECTED: Added this line
-        write_int32(symbol_table_section, sym.address);               // 5. Address
+        write_string(symbol_table_section, sym.name);
+        symbol_table_section.push_back(static_cast<uint8_t>(sym.type));
+        symbol_table_section.push_back(static_cast<uint8_t>(sym.binding));
+        symbol_table_section.push_back(static_cast<uint8_t>(sym.is_defined)); // Write the flag
+        write_int32(symbol_table_section, sym.address);
     }
 
     // 4. Generate Relocation Table Section

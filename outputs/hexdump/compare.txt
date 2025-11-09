@@ -1,0 +1,35 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+27 00 00 00  // Code Section Size: 39 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+4c 00 00 00  // Symbol Table Size: 76 bytes
+04 00 00 00  // Relocation Table Size: 4 bytes
+
+// --- Code Section (39 bytes) ---
+// main: (address 0x0)
+01 0a 00 00 00  // iconst 10
+01 05 00 00 00  // iconst 5
+22  // icmp_gt         # Pushes 1 (true) since 10 > 5
+23 1b 00 00 00  // jmp_if_false else_block
+// if_block: (address 0x10)
+01 01 00 00 00  // iconst 1
+30  // PRINT_I
+07 21 00 00 00  // jmp end_if
+// else_block: (address 0x1b)
+01 00 00 00 00  // iconst 0
+30  // PRINT_I
+// end_if: (address 0x21)
+01 00 00 00 00  // iconst 0
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (76 bytes) ---
+// (Raw symbol table data follows...)
+04 00 00 00 04 00 00 00 6d 61 69 6e 00 01 01 00 00 00 00 08 00 00 00 69 66 5f 62 6c 6f 63 6b 00 00 01 10 00 00 00 0a 00 00 00 65 6c 73 65 5f 62 6c 6f 63 6b 00 00 01 1b 00 00 00 06 00 00 00 65 6e 64 5f 69 66 00 00 01 21 00 00 00 
+
+// --- Relocation Table Section (4 bytes) ---
+// (Raw relocation table data follows...)
+00 00 00 00 
+// (No relocation entries)

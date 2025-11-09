@@ -1,6 +1,7 @@
 // File: structures.h
 // Owner: Rashmitha
 // Role: Data Structures for Assembler & Linker
+// Description: Defines all instruction classes and data structures. (Fully Updated)
 
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
@@ -11,7 +12,9 @@
 #include <memory>
 #include <map>
 
-// Represents a single symbol (label or variable).
+// --- Core Data Structures ---
+
+// Represents a single symbol (label or global static variable).
 struct Symbol
 {
     enum class Type { TEXT, DATA };
@@ -21,99 +24,103 @@ struct Symbol
     Type type;
     Binding binding = Binding::LOCAL;
     uint32_t address;
-    bool is_defined = false;
+    bool is_defined = false; // Flag to distinguish definitions from declarations
 };
 
-// Represents an entry in the data section.
+// Represents a .static data entry
 struct DataEntry {
     std::string name;
     int32_t value;
 };
 
-// Represents a relocation entry.
+// A "to-do" note for the linker
 struct RelocationEntry {
     uint32_t offset;
     std::string target_symbol;
 };
 
-// Container for parsed assembly file.
+// A container for all parsed data from one .stkasm file
 struct AssemblyUnit {
     std::vector<std::unique_ptr<class Instruction>> instructions;
     std::vector<DataEntry> data_entries;
     std::vector<Symbol> symbol_table;
 };
 
-// Base class for all instructions
+// --- Base Instruction Class ---
 class Instruction {
 public:
+    std::string source_line; // Store the original text line for the .txt output
     virtual ~Instruction() = default;
     virtual std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const = 0;
 };
 
-// --- Instruction Classes with INLINE CONSTRUCTORS ---
+// --- Instruction Classes ---
+
+// STACK
 class IConst : public Instruction {
 public:
     int32_t value;
-    // Define constructor inline
-    explicit IConst(int32_t val) : value(val) {}
+    explicit IConst(int32_t val) : value(val) {} // Defined inline
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
-class IAdd : public Instruction {
-public:
-    // Default constructor is fine
-    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
-};
-class ISub : public Instruction {
-public:
-    // Default constructor is fine
-    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
-};
-class IMul : public Instruction {
-public:
-    // Default constructor is fine
-    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
-};
-class IDiv : public Instruction {
-public:
-    // Default constructor is fine
-    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
-};
-class Ret : public Instruction {
-public:
-    // Default constructor is fine
-    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
-};
+
+// ARITHMETIC
+class IAdd : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class ISub : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class IMul : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class IDiv : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+
+// CONTROL FLOW
+class Ret : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class Jmp : public Instruction {
 public:
     std::string label;
-    // Define constructor inline
-    explicit Jmp(const std::string &lbl) : label(lbl) {}
+    explicit Jmp(const std::string &lbl) : label(lbl) {} // Defined inline
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class Invoke : public Instruction {
 public:
     std::string label;
     uint8_t num_args;
-    // Define constructor inline
-    Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {}
+    Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {} // Defined inline
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
+
+// LOCAL VARIABLES (Now use an index)
 class IStore : public Instruction {
 public:
-    std::string var_name;
-    // Define constructor inline
-    explicit IStore(const std::string& name) : var_name(name) {}
+    int32_t index; // Changed from string to int
+    explicit IStore(int32_t idx) : index(idx) {} // Defined inline
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class ILoad : public Instruction {
 public:
-    std::string var_name;
-    // Define constructor inline
-    explicit ILoad(const std::string& name) : var_name(name) {}
+    int32_t index; // Changed from string to int
+    explicit ILoad(int32_t idx) : index(idx) {} // Defined inline
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
-// Represents a loaded .o file in memory.
+// ARRAYS (New)
+class NewArray : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class SetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class GetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+
+// CONDITIONALS (New)
+class ICmpEQ : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class ICmpLT : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class ICmpGT : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class JmpIfFalse : public Instruction {
+public:
+    std::string label;
+    explicit JmpIfFalse(const std::string &lbl) : label(lbl) {} // Defined inline
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
+};
+
+// I/O (New)
+class PrintI : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+
+
+// --- ObjectFile Class (for Linker) ---
 class ObjectFile {
 public:
     std::vector<uint8_t> code_section;
@@ -124,7 +131,7 @@ public:
     static ObjectFile read_from(const std::string& filepath);
 };
 
-// Global Symbol Table Alias
+// --- Global Symbol Table Alias ---
 using GlobalSymbolTable = std::map<std::string, uint32_t>;
 
 #endif // STRUCTURES_H

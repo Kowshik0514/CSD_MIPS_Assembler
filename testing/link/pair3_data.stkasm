@@ -1,0 +1,3 @@
+.data
+.global my_global_data # Define the global data
+.static my_global_data 99

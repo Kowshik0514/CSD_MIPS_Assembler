@@ -1,0 +1,7 @@
+.global main
+.global my_global_data # Declare external data
+
+.text
+main:
+    iload my_global_data # Load the value from the other file
+    ret

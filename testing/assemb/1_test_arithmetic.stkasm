@@ -1,0 +1,14 @@
+# Test basic arithmetic operations
+.text
+.global main
+main:
+    iconst 10
+    iconst 5
+    iadd      # Stack: [15]
+    iconst 2
+    imul      # Stack: [30]
+    iconst 3
+    isub      # Stack: [27]
+    iconst 9
+    idiv      # Stack: [3]
+    ret       # Should return 3

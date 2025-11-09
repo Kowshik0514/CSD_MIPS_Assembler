@@ -1,0 +1,18 @@
+# Tests an if-else block.
+# if (10 > 5) { return 1 } else { return 0 }
+
+.global main
+.text
+main:
+    iconst 10
+    iconst 5
+    icmp_gt         # Pushes 1 (true) since 10 > 5
+    jmp_if_false else_block
+
+if_block:
+    iconst 1
+    ret
+
+else_block:
+    iconst 0
+    ret

@@ -1,7 +1,7 @@
 // File: parser.cpp
 // Owner: Nischith
 // Role: Parser & Front-end
-// Description: Fully corrected implementation of the parser for the .stkasm language.
+// Description: Fully updated 2-pass parser for all new instructions.
 
 #include "parser.h"
 #include <fstream>
@@ -24,17 +24,23 @@ Symbol *find_symbol_in_table(std::vector<Symbol> &table, const std::string &name
     return (it != table.end()) ? &(*it) : nullptr;
 }
 
-// --- NEW HELPER FUNCTION TO CALCULATE INSTRUCTION BYTE SIZE ---
-// This is critical for the parser's first pass to calculate correct addresses for labels.
+// --- NEW HELPER: Get size of an instruction from its mnemonic ---
+// This is critical for Pass 1 to calculate correct addresses for labels.
 uint32_t get_instruction_size(const std::string& mnemonic) {
-    if (mnemonic == "iconst" || mnemonic == "jmp" || mnemonic == "istore" || mnemonic == "iload") {
+    if (mnemonic == "iconst" || mnemonic == "jmp" || mnemonic == "istore" || 
+        mnemonic == "iload" || mnemonic == "jmp_if_false") {
         return 5; // 1-byte opcode + 4-byte argument
-    } else if (mnemonic == "invoke") {
+    }
+    if (mnemonic == "invoke") {
         return 6; // 1-byte opcode + 4-byte address + 1-byte arg count
-    } else if (mnemonic == "iadd" || mnemonic == "isub" || mnemonic == "imul" || mnemonic == "idiv" || mnemonic == "ret") {
+    }
+    if (mnemonic == "iadd" || mnemonic == "isub" || mnemonic == "imul" || mnemonic == "idiv" || 
+        mnemonic == "ret" || mnemonic == "NEW_ARRAY" || mnemonic == "SET_ELEM" || 
+        mnemonic == "GET_ELEM" || mnemonic == "icmp_eq" || mnemonic == "icmp_lt" || 
+        mnemonic == "icmp_gt" || mnemonic == "PRINT_I") {
         return 1; // 1-byte opcode
     }
-    return 0; // Not a valid instruction, will be caught as an error
+    return 0; // Not a valid instruction
 }
 
 AssemblyUnit parse_file(const std::string &filepath) {
@@ -51,12 +57,22 @@ AssemblyUnit parse_file(const std::string &filepath) {
     uint32_t instruction_address = 0;
     uint32_t data_address = 0;
     std::vector<std::string> globals_to_process;
-
-    // --- Pass 1: Identify symbols and calculate correct BYTE OFFSETS. ---
+    std::vector<std::string> source_lines; // Store all original lines
+    
+    // Read all lines into memory first to simplify 2-pass reading
     while (std::getline(file, line)) {
+        source_lines.push_back(line);
+    }
+    file.close(); // Close file, we'll iterate over the vector
+    
+    line_num = 0;
+
+    // --- Pass 1: Find symbols and calculate byte offsets. ---
+    for (const auto& original_line : source_lines) {
         line_num++;
-        std::string cleaned_line = trim(line);
-        if (cleaned_line.empty() || cleaned_line[0] == '#') continue;
+        std::string cleaned_line = trim(original_line.substr(0, original_line.find('#')));
+        
+        if (cleaned_line.empty()) continue;
 
         if (cleaned_line[0] == '.') {
             std::stringstream ss(cleaned_line);
@@ -69,113 +85,136 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 ss >> label_name;
                 globals_to_process.push_back(label_name);
             } else if (directive == ".static") {
-                if (section != CurrentSection::DATA) throw std::runtime_error("L" + std::to_string(line_num) + ": .static can only be used in .data section");
+                if (section != CurrentSection::DATA) throw std::runtime_error("L" + std::to_string(line_num) + ": .static in wrong section");
                 std::string var_name;
                 ss >> var_name;
                 if (find_symbol_in_table(unit.symbol_table, var_name)) throw std::runtime_error("L" + std::to_string(line_num) + ": Duplicate symbol " + var_name);
-                unit.symbol_table.push_back({var_name, Symbol::Type::DATA, Symbol::Binding::LOCAL, data_address, true});
-                data_address += 4;
+                unit.symbol_table.push_back({var_name, Symbol::Type::DATA, Symbol::Binding::LOCAL, data_address, true}); // is_defined = true
+                data_address += 4; // All static data is 4 bytes
             }
         } else if (cleaned_line.back() == ':') {
-            if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Labels can only be defined in .text section");
+            if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Label in wrong section");
             std::string label = cleaned_line.substr(0, cleaned_line.length() - 1);
             if (find_symbol_in_table(unit.symbol_table, label)) throw std::runtime_error("L" + std::to_string(line_num) + ": Duplicate symbol " + label);
-            unit.symbol_table.push_back({label, Symbol::Type::TEXT, Symbol::Binding::LOCAL, instruction_address, true});
+            unit.symbol_table.push_back({label, Symbol::Type::TEXT, Symbol::Binding::LOCAL, instruction_address, true}); // is_defined = true
         } else {
-            if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Instructions can only be in .text section");
+            if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Instruction in wrong section");
             
-            // --- CORRECTED ADDRESS CALCULATION ---
+            // --- CRITICAL BUG FIX: Use get_instruction_size to calculate correct addresses ---
             std::stringstream ss(cleaned_line);
             std::string mnemonic;
             ss >> mnemonic;
             uint32_t instr_size = get_instruction_size(mnemonic);
-            if (instr_size == 0 && !mnemonic.empty()) { // Check for empty to avoid false error on blank lines
-                 throw std::runtime_error("L" + std::to_string(line_num) + ": Unknown mnemonic '" + mnemonic + "'.");
-            }
+            if (instr_size == 0) throw std::runtime_error("L" + std::to_string(line_num) + ": Unknown mnemonic '" + mnemonic + "'.");
             instruction_address += instr_size;
         }
     }
 
-    // Process all the .global directives
+    // After Pass 1, update GLOBAL flags
     for (const auto &name : globals_to_process) {
         Symbol *sym = find_symbol_in_table(unit.symbol_table, name);
         if (sym) {
             sym->binding = Symbol::Binding::GLOBAL;
         } else {
-            unit.symbol_table.push_back({name, Symbol::Type::TEXT, Symbol::Binding::GLOBAL, 0, false});
+            unit.symbol_table.push_back({name, Symbol::Type::TEXT, Symbol::Binding::GLOBAL, 0, false}); // External symbol, is_defined = false
         }
     }
 
-    // --- Pass 2: Parse instructions and data values ---
-    file.clear();
-    file.seekg(0, std::ios::beg);
+    // --- Pass 2: Parse instructions ---
     line_num = 0;
     section = CurrentSection::UNKNOWN;
 
-    while (std::getline(file, line)) {
+    for (const auto& original_line : source_lines) {
         line_num++;
-        size_t comment_pos = line.find('#');
-        if (comment_pos != std::string::npos) line = line.substr(0, comment_pos);
-        std::string cleaned_line = trim(line);
-        if (cleaned_line.empty() || cleaned_line.back() == ':') continue;
+        std::string cleaned_line = trim(original_line.substr(0, original_line.find('#')));
+        
+        if (cleaned_line.empty() || cleaned_line.back() == ':' || cleaned_line[0] == '#') continue;
 
         if (cleaned_line[0] == '.') {
-            std::stringstream ss(cleaned_line);
-            std::string directive;
-            ss >> directive;
-            if (directive == ".text") section = CurrentSection::TEXT;
-            else if (directive == ".data") section = CurrentSection::DATA;
-            else if (directive == ".static") {
-                std::string var_name;
+            if (cleaned_line.rfind(".text", 0) == 0) section = CurrentSection::TEXT;
+            else if (cleaned_line.rfind(".data", 0) == 0) section = CurrentSection::DATA;
+            else if (cleaned_line.rfind(".static", 0) == 0) {
+                std::stringstream ss(cleaned_line);
+                std::string directive, var_name;
                 int32_t value;
-                ss >> var_name >> value;
+                ss >> directive >> var_name >> value;
                 unit.data_entries.push_back({var_name, value});
             }
-        } else if (section == CurrentSection::TEXT) {
+            continue;
+        } 
+        
+        if (section == CurrentSection::TEXT) {
             std::stringstream ss(cleaned_line);
             std::string mnemonic;
             ss >> mnemonic;
+            std::unique_ptr<Instruction> instr;
 
             if (mnemonic == "iconst") {
                 int32_t value;
                 if (!(ss >> value)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'iconst' expects an integer.");
-                unit.instructions.push_back(std::make_unique<IConst>(value));
+                instr = std::make_unique<IConst>(value);
             } else if (mnemonic == "iadd") {
-                unit.instructions.push_back(std::make_unique<IAdd>());
+                instr = std::make_unique<IAdd>();
             } else if (mnemonic == "isub") {
-                unit.instructions.push_back(std::make_unique<ISub>());
+                instr = std::make_unique<ISub>();
             } else if (mnemonic == "imul") {
-                unit.instructions.push_back(std::make_unique<IMul>());
+                instr = std::make_unique<IMul>();
             } else if (mnemonic == "idiv") {
-                unit.instructions.push_back(std::make_unique<IDiv>());
+                instr = std::make_unique<IDiv>();
+            } else if (mnemonic == "ret") {
+                instr = std::make_unique<Ret>();
             } else if (mnemonic == "jmp") {
                 std::string label;
                 ss >> label;
-                unit.instructions.push_back(std::make_unique<Jmp>(label));
+                instr = std::make_unique<Jmp>(label);
             } else if (mnemonic == "invoke") {
                 std::string label;
                 int num_args;
                 ss >> label >> num_args;
-                unit.instructions.push_back(std::make_unique<Invoke>(label, num_args));
-            } else if (mnemonic == "ret") {
-                unit.instructions.push_back(std::make_unique<Ret>());
+                instr = std::make_unique<Invoke>(label, (uint8_t)num_args);
             } 
-            // --- ADDED THE MISSING LOGIC FOR ISTORE and ILOAD ---
+            // --- NEW: Local variable instructions (by index) ---
             else if (mnemonic == "istore") {
-                std::string var_name;
-                if (!(ss >> var_name)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'istore' expects a variable name.");
-                unit.instructions.push_back(std::make_unique<IStore>(var_name));
+                int32_t index;
+                if (!(ss >> index)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'istore' expects an integer index.");
+                instr = std::make_unique<IStore>(index);
             } else if (mnemonic == "iload") {
-                std::string var_name;
-                if (!(ss >> var_name)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'iload' expects a variable name.");
-                unit.instructions.push_back(std::make_unique<ILoad>(var_name));
+                int32_t index;
+                if (!(ss >> index)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'iload' expects an integer index.");
+                instr = std::make_unique<ILoad>(index);
+            }
+            // --- NEW: Array instructions ---
+            else if (mnemonic == "NEW_ARRAY") {
+                instr = std::make_unique<NewArray>();
+            } else if (mnemonic == "SET_ELEM") {
+                instr = std::make_unique<SetElem>();
+            } else if (mnemonic == "GET_ELEM") {
+                instr = std::make_unique<GetElem>();
+            }
+            // --- NEW: Conditional instructions ---
+            else if (mnemonic == "icmp_eq") {
+                instr = std::make_unique<ICmpEQ>();
+            } else if (mnemonic == "icmp_lt") {
+                instr = std::make_unique<ICmpLT>();
+            } else if (mnemonic == "icmp_gt") {
+                instr = std::make_unique<ICmpGT>();
+            } else if (mnemonic == "jmp_if_false") {
+                std::string label;
+                ss >> label;
+                instr = std::make_unique<JmpIfFalse>(label);
+            }
+            // --- NEW: I/O instructions ---
+            else if (mnemonic == "PRINT_I") {
+                instr = std::make_unique<PrintI>();
             }
             else {
-                // Now this error will only trigger for truly unknown mnemonics
-                if (!mnemonic.empty()) {
-                    throw std::runtime_error("L" + std::to_string(line_num) + ": Unknown mnemonic '" + mnemonic + "'.");
-                }
+                // This should have been caught in Pass 1, but good to have
+                throw std::runtime_error("L" + std::to_string(line_num) + ": Unknown mnemonic '" + mnemonic + "'.");
             }
+            
+            // Store the original line (with comments) for the .txt listing file
+            instr->source_line = trim(original_line);
+            unit.instructions.push_back(std::move(instr));
         }
     }
 

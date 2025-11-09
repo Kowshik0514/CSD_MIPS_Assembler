@@ -1,0 +1,41 @@
+--- Assembly Listing ---
+Source file: array.stkasm
+
+--- .text section ---
+Address  | Bytes                | Source Line
+------------------------------------------------------------------
+0x00000000 | 01 05 00 00 00       | iconst 5
+0x50000000 | 10                   | NEW_ARRAY
+0x60000000 | 09 00 00 00 00       | istore 0      # arr1 pointer in local 0
+0xb0000000 | 01 03 00 00 00       | iconst 3
+0x10000000 | 10                   | NEW_ARRAY
+0x11000000 | 09 01 00 00 00       | istore 1      # arr2 pointer in local 1
+0x16000000 | 01 64 00 00 00       | iconst 100    # Value
+0x1b000000 | 01 02 00 00 00       | iconst 2      # Index
+0x20000000 | 0a 00 00 00 00       | iload 0       # Pointer
+0x25000000 | 11                   | SET_ELEM
+0x26000000 | 01 c8 00 00 00       | iconst 200    # Value
+0x2b000000 | 01 01 00 00 00       | iconst 1      # Index
+0x30000000 | 0a 01 00 00 00       | iload 1       # Pointer
+0x35000000 | 11                   | SET_ELEM
+0x36000000 | 01 02 00 00 00       | iconst 2      # Index for arr1[2]
+0x3b000000 | 0a 00 00 00 00       | iload 0       # Pointer for arr1
+0x40000000 | 12                   | GET_ELEM      # Pops index, ptr; Pushes 100
+0x41000000 | 01 01 00 00 00       | iconst 1      # Index for arr2[1]
+0x46000000 | 0a 01 00 00 00       | iload 1       # Pointer for arr2
+0x4b000000 | 12                   | GET_ELEM      # Pops index, ptr; Pushes 200
+0x4c000000 | 02                   | iadd          # Pops 200, pops 100; Pushes 300
+0x4d000000 | 09 02 00 00 00       | istore 2      # Store result (300) in local 2
+0x52000000 | 0a 02 00 00 00       | iload 2       # Load c (300)
+0x57000000 | 30                   | PRINT_I       # Print the integer
+0x58000000 | 01 00 00 00 00       | iconst 0
+0x5d000000 | 06                   | ret
+
+--- .data section ---
+Address  | Bytes             | Definition
+--------------------------------------------------------
+
+--- Symbol Table ---
+Name           | Type | Binding | Def | Address
+--------------------------------------------------------
+main           | TEXT | GLOBAL  | yes | 0x00000000
