@@ -1,0 +1,22 @@
+--- Assembly Listing ---
+Source file: 3_test_local_jumps.stkasm
+
+--- .text section ---
+Address  | Bytes                | Source Line
+------------------------------------------------------------------
+0x00000000 | 01 05 00 00 00       | iconst 5
+0x50000000 | 07 10 00 00 00       | jmp check_value # Forward jump
+0xa0000000 | 01 0a 00 00 00       | iconst 10       # Should eventually reach here
+0xf0000000 | 06                   | ret
+0x10000000 | 07 0a 00 00 00       | jmp continue_program # Backward jump
+
+--- .data section ---
+Address  | Bytes             | Definition
+--------------------------------------------------------
+
+--- Symbol Table ---
+Name           | Type | Binding | Def | Address
+--------------------------------------------------------
+main           | TEXT | GLOBAL  | yes | 0x00000000
+continue_program| TEXT | LOCAL   | yes | 0xa0000000
+check_value    | TEXT | LOCAL   | yes | 0x10000000

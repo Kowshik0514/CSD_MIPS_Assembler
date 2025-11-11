@@ -1,4 +1,3 @@
-# Test local jumps
 .text
 .global main
 main:
@@ -10,6 +9,4 @@ continue_program:
     ret
 
 check_value:
-    # A simple conditional simulation (in reality, need compare+jump instructions)
-    # If the value was 5 (which it is), jump back
     jmp continue_program # Backward jump

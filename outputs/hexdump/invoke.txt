@@ -1,0 +1,33 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+2d 00 00 00  // Code Section Size: 45 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+21 00 00 00  // Symbol Table Size: 33 bytes
+10 00 00 00  // Relocation Table Size: 16 bytes
+
+// --- Code Section (45 bytes) ---
+// func: (address 0x0)
+0a 00 00 00 00  // iload 0
+0a 01 00 00 00  // iload 1
+02  // iadd
+06  // ret
+// kik: (address 0xc)
+0a 00 00 00 00  // iload 0
+0a 00 00 00 00  // iload 0
+08 00 00 00 00 02  // invoke func 2
+09 01 00 00 00  // istore 1
+0a 01 00 00 00  // iload 1
+30  // PRINT_I
+01 00 00 00 00  // iconst 0
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (33 bytes) ---
+// (Raw symbol table data follows...)
+02 00 00 00 04 00 00 00 66 75 6e 63 00 01 01 00 00 00 00 03 00 00 00 6b 69 6b 00 01 01 0c 00 00 00 
+
+// --- Relocation Table Section (16 bytes) ---
+// (Raw relocation table data follows...)
+01 00 00 00 17 00 00 00 04 00 00 00 66 75 6e 63 

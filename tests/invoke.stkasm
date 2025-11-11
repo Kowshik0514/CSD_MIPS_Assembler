@@ -1,0 +1,19 @@
+.text
+
+.global func
+func:
+    iload 0
+    iload 1
+    iadd
+    ret
+
+.global kik
+kik:
+    iload 0
+    iload 0
+    invoke func 2
+    istore 1
+    iload 1
+    PRINT_I
+    iconst 0
+    ret

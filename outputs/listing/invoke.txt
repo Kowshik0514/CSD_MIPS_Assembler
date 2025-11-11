@@ -1,0 +1,28 @@
+--- Assembly Listing ---
+Source file: invoke.stkasm
+
+--- .text section ---
+Address  | Bytes                | Source Line
+------------------------------------------------------------------
+0x00000000 | 0a 00 00 00 00       | iload 0
+0x50000000 | 0a 01 00 00 00       | iload 1
+0xa0000000 | 02                   | iadd
+0xb0000000 | 06                   | ret
+0xc0000000 | 0a 00 00 00 00       | iload 0
+0x11000000 | 0a 00 00 00 00       | iload 0
+0x16000000 | 08 00 00 00 00 02    | invoke func 2
+0x1c000000 | 09 01 00 00 00       | istore 1
+0x21000000 | 0a 01 00 00 00       | iload 1
+0x26000000 | 30                   | PRINT_I
+0x27000000 | 01 00 00 00 00       | iconst 0
+0x2c000000 | 06                   | ret
+
+--- .data section ---
+Address  | Bytes             | Definition
+--------------------------------------------------------
+
+--- Symbol Table ---
+Name           | Type | Binding | Def | Address
+--------------------------------------------------------
+func           | TEXT | GLOBAL  | yes | 0x00000000
+kik            | TEXT | GLOBAL  | yes | 0xc0000000
