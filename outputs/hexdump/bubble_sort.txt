@@ -1,0 +1,173 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+54 02 00 00  // Code Section Size: 596 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+12 00 00 00  // Symbol Table Size: 18 bytes
+04 00 00 00  // Relocation Table Size: 4 bytes
+
+// --- Code Section (596 bytes) ---
+// kik: (address 0x0)
+01 05 00 00 00  // iconst 5
+10  // NEW_ARRAY
+09 00 00 00 00  // istore 0
+0a 00 00 00 00  // iload 0
+01 00 00 00 00  // iconst 0
+01 04 00 00 00  // iconst 4
+11  // SET_ELEM
+0a 00 00 00 00  // iload 0
+01 01 00 00 00  // iconst 1
+01 01 00 00 00  // iconst 1
+11  // SET_ELEM
+0a 00 00 00 00  // iload 0
+01 02 00 00 00  // iconst 2
+01 05 00 00 00  // iconst 5
+11  // SET_ELEM
+0a 00 00 00 00  // iload 0
+01 03 00 00 00  // iconst 3
+01 02 00 00 00  // iconst 2
+11  // SET_ELEM
+0a 00 00 00 00  // iload 0
+01 04 00 00 00  // iconst 4
+01 03 00 00 00  // iconst 3
+11  // SET_ELEM
+01 00 00 00 00  // iconst 0
+09 02 00 00 00  // istore 2
+0a 02 00 00 00  // iload 2
+01 04 00 00 00  // iconst 4
+21  // icmp_lt
+24 00 00 00 00  // jnz #L1
+07 00 00 00 00  // jmp #L2
+0a 02 00 00 00  // iload 2
+01 01 00 00 00  // iconst 1
+02  // iadd
+09 02 00 00 00  // istore 2
+07 00 00 00 00  // jmp #L0
+01 00 00 00 00  // iconst 0
+09 03 00 00 00  // istore 3
+01 04 00 00 00  // iconst 4
+0a 02 00 00 00  // iload 2
+03  // isub
+0a 03 00 00 00  // iload 3
+21  // icmp_lt
+24 00 00 00 00  // jnz #L5
+07 00 00 00 00  // jmp #L6
+0a 03 00 00 00  // iload 3
+01 01 00 00 00  // iconst 1
+02  // iadd
+09 03 00 00 00  // istore 3
+07 00 00 00 00  // jmp #L4
+0a 00 00 00 00  // iload 0
+0a 03 00 00 00  // iload 3
+12  // GET_ELEM
+0a 03 00 00 00  // iload 3
+01 01 00 00 00  // iconst 1
+02  // iadd
+0a 00 00 00 00  // iload 0
+12  // GET_ELEM
+22  // icmp_gt
+24 00 00 00 00  // jnz #L9
+07 00 00 00 00  // jmp #L10
+0a 00 00 00 00  // iload 0
+0a 03 00 00 00  // iload 3
+12  // GET_ELEM
+09 01 00 00 00  // istore 1
+0a 03 00 00 00  // iload 3
+01 01 00 00 00  // iconst 1
+02  // iadd
+0a 00 00 00 00  // iload 0
+12  // GET_ELEM
+0a 00 00 00 00  // iload 0
+0a 03 00 00 00  // iload 3
+11  // SET_ELEM
+0a 03 00 00 00  // iload 3
+01 01 00 00 00  // iconst 1
+02  // iadd
+0a 00 00 00 00  // iload 0
+0a 01 00 00 00  // iload 1
+11  // SET_ELEM
+07 00 00 00 00  // jmp #L8
+07 00 00 00 00  // jmp #L7
+07 00 00 00 00  // jmp #L3
+01 09 00 00 00  // iconst 9
+13  // NEW_STRING
+09 04 00 00 00  // istore 4
+0a 04 00 00 00  // iload 4
+01 00 00 00 00  // iconst 0
+01 53 00 00 00  // iconst 83
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 01 00 00 00  // iconst 1
+01 6f 00 00 00  // iconst 111
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 02 00 00 00  // iconst 2
+01 72 00 00 00  // iconst 114
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 03 00 00 00  // iconst 3
+01 74 00 00 00  // iconst 116
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 04 00 00 00  // iconst 4
+01 65 00 00 00  // iconst 101
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 05 00 00 00  // iconst 5
+01 64 00 00 00  // iconst 100
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 06 00 00 00  // iconst 6
+01 3a 00 00 00  // iconst 58
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 07 00 00 00  // iconst 7
+01 20 00 00 00  // iconst 32
+14  // SET_CHAR
+0a 04 00 00 00  // iload 4
+01 08 00 00 00  // iconst 8
+01 00 00 00 00  // iconst 0
+14  // SET_CHAR
+31  // PRINT_S
+01 00 00 00 00  // iconst 0
+09 02 00 00 00  // istore 2
+0a 02 00 00 00  // iload 2
+01 05 00 00 00  // iconst 5
+21  // icmp_lt
+24 00 00 00 00  // jnz #L12
+07 00 00 00 00  // jmp #L13
+0a 02 00 00 00  // iload 2
+01 01 00 00 00  // iconst 1
+02  // iadd
+09 02 00 00 00  // istore 2
+07 00 00 00 00  // jmp #L11
+0a 00 00 00 00  // iload 0
+0a 02 00 00 00  // iload 2
+12  // GET_ELEM
+30  // PRINT_I
+01 02 00 00 00  // iconst 2
+13  // NEW_STRING
+09 05 00 00 00  // istore 5
+0a 05 00 00 00  // iload 5
+01 00 00 00 00  // iconst 0
+01 20 00 00 00  // iconst 32
+14  // SET_CHAR
+0a 05 00 00 00  // iload 5
+01 01 00 00 00  // iconst 1
+01 00 00 00 00  // iconst 0
+14  // SET_CHAR
+31  // PRINT_S
+07 00 00 00 00  // jmp #L14
+01 00 00 00 00  // iconst 0
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (18 bytes) ---
+// (Raw symbol table data follows...)
+01 00 00 00 03 00 00 00 6b 69 6b 00 01 01 00 00 00 00 
+
+// --- Relocation Table Section (4 bytes) ---
+// (Raw relocation table data follows...)
+00 00 00 00 
+// (No relocation entries)

@@ -40,7 +40,6 @@ enum class Opcode : uint8_t {
     SET_ELEM  = 0x11,
     GET_ELEM  = 0x12,
     
-    // STRING OPCODES
     NEW_STRING = 0x13,
     SET_CHAR   = 0x14,
     GET_CHAR   = 0x15,
@@ -49,7 +48,8 @@ enum class Opcode : uint8_t {
     ICMP_LT = 0x21,
     ICMP_GT = 0x22,
     JMP_IF_FALSE = 0x23,
-
+    JNZ          = 0x24, // <-- ADDED JNZ
+    
     PRINT_I = 0x30,
     PRINT_S = 0x31
 };
@@ -70,12 +70,10 @@ std::vector<uint8_t> IConst::emit(const AssemblyUnit &, RelocationEntry &) const
     write_int32(code, value);
     return code;
 }
-// Arithmetic
 std::vector<uint8_t> IAdd::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IADD) }; }
 std::vector<uint8_t> ISub::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ISUB) }; }
 std::vector<uint8_t> IMul::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IMUL) }; }
 std::vector<uint8_t> IDiv::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::IDIV) }; }
-// Control Flow
 std::vector<uint8_t> Ret::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::RET) }; }
 
 // Helper for Jmp, Invoke, JmpIfFalse
@@ -97,6 +95,9 @@ std::vector<uint8_t> Jmp::emit(const AssemblyUnit &unit, RelocationEntry &reloc)
 }
 std::vector<uint8_t> JmpIfFalse::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
     return emit_jump_instruction(static_cast<uint8_t>(Opcode::JMP_IF_FALSE), unit, reloc, label);
+}
+std::vector<uint8_t> JmpIfNotZero::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
+    return emit_jump_instruction(static_cast<uint8_t>(Opcode::JNZ), unit, reloc, label);
 }
 std::vector<uint8_t> Invoke::emit(const AssemblyUnit &unit, RelocationEntry &reloc) const {
     std::vector<uint8_t> code = emit_jump_instruction(static_cast<uint8_t>(Opcode::INVOKE), unit, reloc, label);
@@ -123,6 +124,7 @@ std::vector<uint8_t> NewArray::emit(const AssemblyUnit &, RelocationEntry &) con
 std::vector<uint8_t> SetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::SET_ELEM) }; }
 std::vector<uint8_t> GetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::GET_ELEM) }; }
 
+// Strings
 std::vector<uint8_t> NewString::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::NEW_STRING) }; }
 std::vector<uint8_t> SetChar::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::SET_CHAR) }; }
 std::vector<uint8_t> GetChar::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::GET_CHAR) }; }
@@ -131,10 +133,11 @@ std::vector<uint8_t> GetChar::emit(const AssemblyUnit &, RelocationEntry &) cons
 std::vector<uint8_t> ICmpEQ::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_EQ) }; }
 std::vector<uint8_t> ICmpLT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_LT) }; }
 std::vector<uint8_t> ICmpGT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_GT) }; }
-    
+
 // I/O
 std::vector<uint8_t> PrintI::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_I) }; }
-std::vector<uint8_t> PrintS::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_S) }; } 
+std::vector<uint8_t> PrintS::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_S) }; }
+
 
 // --- Main Emitter Function ---
 std::vector<uint8_t> emit_object_file(const AssemblyUnit &unit) {

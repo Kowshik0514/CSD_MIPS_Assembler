@@ -14,32 +14,27 @@
 
 // --- Core Data Structures ---
 
-// Represents a single symbol (label or global static variable).
 struct Symbol
 {
     enum class Type { TEXT, DATA };
     enum class Binding { LOCAL, GLOBAL };
-
     std::string name;
     Type type;
     Binding binding = Binding::LOCAL;
     uint32_t address;
-    bool is_defined = false; // Flag to distinguish definitions from declarations
+    bool is_defined = false;
 };
 
-// Represents a .static data entry
 struct DataEntry {
     std::string name;
     int32_t value;
 };
 
-// A "to-do" note for the linker
 struct RelocationEntry {
     uint32_t offset;
     std::string target_symbol;
 };
 
-// A container for all parsed data from one .stkasm file
 struct AssemblyUnit {
     std::vector<std::unique_ptr<class Instruction>> instructions;
     std::vector<DataEntry> data_entries;
@@ -49,7 +44,7 @@ struct AssemblyUnit {
 // --- Base Instruction Class ---
 class Instruction {
 public:
-    std::string source_line; // Store the original text line for the .txt output
+    std::string source_line;
     virtual ~Instruction() = default;
     virtual std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const = 0;
 };
@@ -86,7 +81,7 @@ public:
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
-// LOCAL VARIABLES (Now use an index)
+// LOCAL VARIABLES
 class IStore : public Instruction {
 public:
     int32_t index;
@@ -105,7 +100,7 @@ class NewArray : public Instruction { public: std::vector<uint8_t> emit(const As
 class SetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class GetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 
-// STRINGS (NEW)
+// STRINGS
 class NewString : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class SetChar : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class GetChar : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
@@ -120,10 +115,17 @@ public:
     explicit JmpIfFalse(const std::string &lbl) : label(lbl) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
+// NEW: JNZ
+class JmpIfNotZero : public Instruction {
+public:
+    std::string label;
+    explicit JmpIfNotZero(const std::string &lbl) : label(lbl) {}
+    std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
+};
 
 // I/O
 class PrintI : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
-class PrintS : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; }; // NEW
+class PrintS : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 
 
 // --- ObjectFile Class (for Linker) ---

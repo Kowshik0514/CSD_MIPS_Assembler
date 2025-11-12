@@ -27,7 +27,8 @@ Symbol *find_symbol_in_table(std::vector<Symbol> &table, const std::string &name
 // --- Get size of an instruction from its mnemonic ---
 uint32_t get_instruction_size(const std::string& mnemonic) {
     if (mnemonic == "iconst" || mnemonic == "jmp" || mnemonic == "istore" || 
-        mnemonic == "iload" || mnemonic == "jmp_if_false") {
+        mnemonic == "iload" || mnemonic == "jmp_if_false" || 
+        mnemonic == "jnz") {
         return 5; // 1-byte opcode + 4-byte argument
     }
     if (mnemonic == "invoke") {
@@ -37,7 +38,6 @@ uint32_t get_instruction_size(const std::string& mnemonic) {
         mnemonic == "ret" || mnemonic == "NEW_ARRAY" || mnemonic == "SET_ELEM" || 
         mnemonic == "GET_ELEM" || mnemonic == "icmp_eq" || mnemonic == "icmp_lt" || 
         mnemonic == "icmp_gt" || mnemonic == "PRINT_I" || 
-        // --- ADD NEW STRING/IO OPCODES ---
         mnemonic == "NEW_STRING" || mnemonic == "SET_CHAR" || 
         mnemonic == "GET_CHAR" || mnemonic == "PRINT_S") {
         return 1; // 1-byte opcode
@@ -206,6 +206,11 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 std::string label;
                 ss >> label;
                 instr = std::make_unique<JmpIfFalse>(label);
+            } 
+            else if (mnemonic == "jnz") {
+                std::string label;
+                ss >> label;
+                instr = std::make_unique<JmpIfNotZero>(label);
             }
             else if (mnemonic == "PRINT_I") {
                 instr = std::make_unique<PrintI>();

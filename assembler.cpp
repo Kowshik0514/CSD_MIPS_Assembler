@@ -275,6 +275,21 @@ int main(int argc, char* argv[]) {
 
         // --- NEW Step 5: Write the .txt hexdump file ---
         write_hexdump_file(output_hexdump_file, bytecode, unit);
+
+        // --- NEW Step 6: Update recent_output copies (recent.o, listing.txt, hexoutput.txt) ---
+        std::string recent_dir = base_output_dir + "/recent_output";
+        try {
+            fs::create_directories(recent_dir);
+            // Copy the .o file to recent.o (overwrite if exists)
+            fs::copy_file(output_o_file, recent_dir + "/recent.o", fs::copy_options::overwrite_existing);
+            // Copy listing file to listing.txt
+            fs::copy_file(output_listing_file, recent_dir + "/listing.txt", fs::copy_options::overwrite_existing);
+            // Copy hexdump file to hexoutput.txt
+            fs::copy_file(output_hexdump_file, recent_dir + "/hexoutput.txt", fs::copy_options::overwrite_existing);
+            std::cout << "Recent outputs updated in '" << recent_dir << "'" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: Could not update recent_output: " << e.what() << std::endl;
+        }
         
         std::cout << "Assembly complete. Outputs are in 'outputs/' directory." << std::endl;
 
