@@ -1,0 +1,172 @@
+# Auto-generated .stkasm from TAC
+.text
+
+.global kik
+kik:
+    iconst 5
+    NEW_ARRAY
+    istore 0
+    iload 0
+    iconst 0
+    iconst 4
+    SET_ELEM
+    iload 0
+    iconst 1
+    iconst 1
+    SET_ELEM
+    iload 0
+    iconst 2
+    iconst 5
+    SET_ELEM
+    iload 0
+    iconst 3
+    iconst 2
+    SET_ELEM
+    iload 0
+    iconst 4
+    iconst 3
+    SET_ELEM
+    iconst 0
+    istore 2
+#L0:
+    iload 2
+    iconst 4
+    icmp_lt
+    jnz #L1
+    jmp #L2
+#L3:
+    iload 2
+    iconst 1
+    iadd
+    istore 2
+    jmp #L0
+#L1:
+    iconst 0
+    istore 3
+#L4:
+    iconst 4
+    iload 2
+    isub
+    iload 3
+    icmp_lt
+    jnz #L5
+    jmp #L6
+#L7:
+    iload 3
+    iconst 1
+    iadd
+    istore 3
+    jmp #L4
+#L5:
+    iload 0
+    iload 3
+    GET_ELEM
+    iload 3
+    iconst 1
+    iadd
+    iload 0
+    GET_ELEM
+    icmp_gt
+    jnz #L9
+    jmp #L10
+#L9:
+    iload 0
+    iload 3
+    GET_ELEM
+    istore 1
+    iload 3
+    iconst 1
+    iadd
+    iload 0
+    GET_ELEM
+    iload 0
+    iload 3
+    SET_ELEM
+    iload 3
+    iconst 1
+    iadd
+    iload 0
+    iload 1
+    SET_ELEM
+    jmp #L8
+#L10:
+#L8:
+    jmp #L7
+#L6:
+    jmp #L3
+#L2:
+    iconst 9
+    NEW_STRING
+    istore 4
+    iload 4
+    iconst 0
+    iconst 83
+    SET_CHAR
+    iload 4
+    iconst 1
+    iconst 111
+    SET_CHAR
+    iload 4
+    iconst 2
+    iconst 114
+    SET_CHAR
+    iload 4
+    iconst 3
+    iconst 116
+    SET_CHAR
+    iload 4
+    iconst 4
+    iconst 101
+    SET_CHAR
+    iload 4
+    iconst 5
+    iconst 100
+    SET_CHAR
+    iload 4
+    iconst 6
+    iconst 58
+    SET_CHAR
+    iload 4
+    iconst 7
+    iconst 32
+    SET_CHAR
+    iload 4
+    iconst 8
+    iconst 0
+    SET_CHAR
+    PRINT_S
+    iconst 0
+    istore 2
+#L11:
+    iload 2
+    iconst 5
+    icmp_lt
+    jnz #L12
+    jmp #L13
+#L14:
+    iload 2
+    iconst 1
+    iadd
+    istore 2
+    jmp #L11
+#L12:
+    iload 0
+    iload 2
+    GET_ELEM
+    PRINT_I
+    iconst 2
+    NEW_STRING
+    istore 5
+    iload 5
+    iconst 0
+    iconst 32
+    SET_CHAR
+    iload 5
+    iconst 1
+    iconst 0
+    SET_CHAR
+    PRINT_S
+    jmp #L14
+#L13:
+    iconst 0
+    ret

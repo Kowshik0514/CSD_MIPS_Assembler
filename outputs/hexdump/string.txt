@@ -1,0 +1,46 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+61 00 00 00  // Code Section Size: 97 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+13 00 00 00  // Symbol Table Size: 19 bytes
+04 00 00 00  // Relocation Table Size: 4 bytes
+
+// --- Code Section (97 bytes) ---
+// main: (address 0x0)
+01 7b 00 00 00  // iconst 123
+09 00 00 00 00  // istore 0
+01 03 00 00 00  // iconst 3
+13  // NEW_STRING
+09 01 00 00 00  // istore 1
+0a 01 00 00 00  // iload 1
+01 00 00 00 00  // iconst 0
+01 48 00 00 00  // iconst 72
+14  // SET_CHAR
+0a 01 00 00 00  // iload 1
+01 01 00 00 00  // iconst 1
+01 69 00 00 00  // iconst 105
+14  // SET_CHAR
+0a 01 00 00 00  // iload 1
+01 02 00 00 00  // iconst 2
+01 00 00 00 00  // iconst 0
+14  // SET_CHAR
+0a 01 00 00 00  // iload 1
+09 02 00 00 00  // istore 2
+0a 00 00 00 00  // iload 0
+30  // PRINT_I
+0a 02 00 00 00  // iload 2
+31  // PRINT_S
+01 00 00 00 00  // iconst 0
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (19 bytes) ---
+// (Raw symbol table data follows...)
+01 00 00 00 04 00 00 00 6d 61 69 6e 00 01 01 00 00 00 00 
+
+// --- Relocation Table Section (4 bytes) ---
+// (Raw relocation table data follows...)
+00 00 00 00 
+// (No relocation entries)

@@ -1,0 +1,28 @@
+.text
+.global main
+main:
+    iconst 123
+    istore 0
+    iconst 3
+    NEW_STRING
+    istore 1
+    iload 1
+    iconst 0
+    iconst 72
+    SET_CHAR
+    iload 1
+    iconst 1
+    iconst 105
+    SET_CHAR
+    iload 1
+    iconst 2
+    iconst 0
+    SET_CHAR
+    iload 1
+    istore 2
+    iload 0
+    PRINT_I
+    iload 2
+    PRINT_S
+    iconst 0
+    ret

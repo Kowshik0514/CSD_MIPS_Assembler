@@ -40,12 +40,18 @@ enum class Opcode : uint8_t {
     SET_ELEM  = 0x11,
     GET_ELEM  = 0x12,
     
+    // STRING OPCODES
+    NEW_STRING = 0x13,
+    SET_CHAR   = 0x14,
+    GET_CHAR   = 0x15,
+    
     ICMP_EQ = 0x20,
     ICMP_LT = 0x21,
     ICMP_GT = 0x22,
     JMP_IF_FALSE = 0x23,
 
-    PRINT_I = 0x30
+    PRINT_I = 0x30,
+    PRINT_S = 0x31
 };
 
 // --- Symbol lookup ---
@@ -77,12 +83,11 @@ static std::vector<uint8_t> emit_jump_instruction(uint8_t opcode, const Assembly
     std::vector<uint8_t> code;
     code.push_back(opcode);
     const Symbol *target = find_symbol(unit, label);
-    // Create relocation entry if symbol is not a defined local
     if (target && target->is_defined && target->binding == Symbol::Binding::LOCAL) {
         write_int32(code, target->address);
     } else { 
-        write_int32(code, 0); // Write placeholder
-        reloc.target_symbol = label; // Create relocation entry
+        write_int32(code, 0); 
+        reloc.target_symbol = label;
     }
     return code;
 }
@@ -117,13 +122,19 @@ std::vector<uint8_t> ILoad::emit(const AssemblyUnit &, RelocationEntry &) const 
 std::vector<uint8_t> NewArray::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::NEW_ARRAY) }; }
 std::vector<uint8_t> SetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::SET_ELEM) }; }
 std::vector<uint8_t> GetElem::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::GET_ELEM) }; }
+
+std::vector<uint8_t> NewString::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::NEW_STRING) }; }
+std::vector<uint8_t> SetChar::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::SET_CHAR) }; }
+std::vector<uint8_t> GetChar::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::GET_CHAR) }; }
+
 // Conditionals
 std::vector<uint8_t> ICmpEQ::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_EQ) }; }
 std::vector<uint8_t> ICmpLT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_LT) }; }
 std::vector<uint8_t> ICmpGT::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::ICMP_GT) }; }
+    
 // I/O
 std::vector<uint8_t> PrintI::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_I) }; }
-
+std::vector<uint8_t> PrintS::emit(const AssemblyUnit &, RelocationEntry &) const { return { static_cast<uint8_t>(Opcode::PRINT_S) }; } 
 
 // --- Main Emitter Function ---
 std::vector<uint8_t> emit_object_file(const AssemblyUnit &unit) {

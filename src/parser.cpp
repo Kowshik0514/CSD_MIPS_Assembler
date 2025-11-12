@@ -24,8 +24,7 @@ Symbol *find_symbol_in_table(std::vector<Symbol> &table, const std::string &name
     return (it != table.end()) ? &(*it) : nullptr;
 }
 
-// --- NEW HELPER: Get size of an instruction from its mnemonic ---
-// This is critical for Pass 1 to calculate correct addresses for labels.
+// --- Get size of an instruction from its mnemonic ---
 uint32_t get_instruction_size(const std::string& mnemonic) {
     if (mnemonic == "iconst" || mnemonic == "jmp" || mnemonic == "istore" || 
         mnemonic == "iload" || mnemonic == "jmp_if_false") {
@@ -37,7 +36,10 @@ uint32_t get_instruction_size(const std::string& mnemonic) {
     if (mnemonic == "iadd" || mnemonic == "isub" || mnemonic == "imul" || mnemonic == "idiv" || 
         mnemonic == "ret" || mnemonic == "NEW_ARRAY" || mnemonic == "SET_ELEM" || 
         mnemonic == "GET_ELEM" || mnemonic == "icmp_eq" || mnemonic == "icmp_lt" || 
-        mnemonic == "icmp_gt" || mnemonic == "PRINT_I") {
+        mnemonic == "icmp_gt" || mnemonic == "PRINT_I" || 
+        // --- ADD NEW STRING/IO OPCODES ---
+        mnemonic == "NEW_STRING" || mnemonic == "SET_CHAR" || 
+        mnemonic == "GET_CHAR" || mnemonic == "PRINT_S") {
         return 1; // 1-byte opcode
     }
     return 0; // Not a valid instruction
@@ -59,11 +61,10 @@ AssemblyUnit parse_file(const std::string &filepath) {
     std::vector<std::string> globals_to_process;
     std::vector<std::string> source_lines; // Store all original lines
     
-    // Read all lines into memory first to simplify 2-pass reading
     while (std::getline(file, line)) {
         source_lines.push_back(line);
     }
-    file.close(); // Close file, we'll iterate over the vector
+    file.close();
     
     line_num = 0;
 
@@ -90,7 +91,7 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 ss >> var_name;
                 if (find_symbol_in_table(unit.symbol_table, var_name)) throw std::runtime_error("L" + std::to_string(line_num) + ": Duplicate symbol " + var_name);
                 unit.symbol_table.push_back({var_name, Symbol::Type::DATA, Symbol::Binding::LOCAL, data_address, true}); // is_defined = true
-                data_address += 4; // All static data is 4 bytes
+                data_address += 4;
             }
         } else if (cleaned_line.back() == ':') {
             if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Label in wrong section");
@@ -100,7 +101,6 @@ AssemblyUnit parse_file(const std::string &filepath) {
         } else {
             if (section != CurrentSection::TEXT) throw std::runtime_error("L" + std::to_string(line_num) + ": Instruction in wrong section");
             
-            // --- CRITICAL BUG FIX: Use get_instruction_size to calculate correct addresses ---
             std::stringstream ss(cleaned_line);
             std::string mnemonic;
             ss >> mnemonic;
@@ -173,7 +173,6 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 ss >> label >> num_args;
                 instr = std::make_unique<Invoke>(label, (uint8_t)num_args);
             } 
-            // --- NEW: Local variable instructions (by index) ---
             else if (mnemonic == "istore") {
                 int32_t index;
                 if (!(ss >> index)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'istore' expects an integer index.");
@@ -183,7 +182,6 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 if (!(ss >> index)) throw std::runtime_error("L" + std::to_string(line_num) + ": 'iload' expects an integer index.");
                 instr = std::make_unique<ILoad>(index);
             }
-            // --- NEW: Array instructions ---
             else if (mnemonic == "NEW_ARRAY") {
                 instr = std::make_unique<NewArray>();
             } else if (mnemonic == "SET_ELEM") {
@@ -191,7 +189,13 @@ AssemblyUnit parse_file(const std::string &filepath) {
             } else if (mnemonic == "GET_ELEM") {
                 instr = std::make_unique<GetElem>();
             }
-            // --- NEW: Conditional instructions ---
+            else if (mnemonic == "NEW_STRING") {
+                instr = std::make_unique<NewString>();
+            } else if (mnemonic == "SET_CHAR") {
+                instr = std::make_unique<SetChar>();
+            } else if (mnemonic == "GET_CHAR") {
+                instr = std::make_unique<GetChar>();
+            }
             else if (mnemonic == "icmp_eq") {
                 instr = std::make_unique<ICmpEQ>();
             } else if (mnemonic == "icmp_lt") {
@@ -203,16 +207,16 @@ AssemblyUnit parse_file(const std::string &filepath) {
                 ss >> label;
                 instr = std::make_unique<JmpIfFalse>(label);
             }
-            // --- NEW: I/O instructions ---
             else if (mnemonic == "PRINT_I") {
                 instr = std::make_unique<PrintI>();
             }
+            else if (mnemonic == "PRINT_S") {
+                instr = std::make_unique<PrintS>();
+            }
             else {
-                // This should have been caught in Pass 1, but good to have
                 throw std::runtime_error("L" + std::to_string(line_num) + ": Unknown mnemonic '" + mnemonic + "'.");
             }
             
-            // Store the original line (with comments) for the .txt listing file
             instr->source_line = trim(original_line);
             unit.instructions.push_back(std::move(instr));
         }

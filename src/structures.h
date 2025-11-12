@@ -60,7 +60,7 @@ public:
 class IConst : public Instruction {
 public:
     int32_t value;
-    explicit IConst(int32_t val) : value(val) {} // Defined inline
+    explicit IConst(int32_t val) : value(val) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
@@ -75,49 +75,55 @@ class Ret : public Instruction { public: std::vector<uint8_t> emit(const Assembl
 class Jmp : public Instruction {
 public:
     std::string label;
-    explicit Jmp(const std::string &lbl) : label(lbl) {} // Defined inline
+    explicit Jmp(const std::string &lbl) : label(lbl) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class Invoke : public Instruction {
 public:
     std::string label;
     uint8_t num_args;
-    Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {} // Defined inline
+    Invoke(const std::string &lbl, uint8_t args) : label(lbl), num_args(args) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
 // LOCAL VARIABLES (Now use an index)
 class IStore : public Instruction {
 public:
-    int32_t index; // Changed from string to int
-    explicit IStore(int32_t idx) : index(idx) {} // Defined inline
+    int32_t index;
+    explicit IStore(int32_t idx) : index(idx) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 class ILoad : public Instruction {
 public:
-    int32_t index; // Changed from string to int
-    explicit ILoad(int32_t idx) : index(idx) {} // Defined inline
+    int32_t index;
+    explicit ILoad(int32_t idx) : index(idx) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
-// ARRAYS (New)
+// ARRAYS
 class NewArray : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class SetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class GetElem : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 
-// CONDITIONALS (New)
+// STRINGS (NEW)
+class NewString : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class SetChar : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class GetChar : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+
+// CONDITIONALS
 class ICmpEQ : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class ICmpLT : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class ICmpGT : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
 class JmpIfFalse : public Instruction {
 public:
     std::string label;
-    explicit JmpIfFalse(const std::string &lbl) : label(lbl) {} // Defined inline
+    explicit JmpIfFalse(const std::string &lbl) : label(lbl) {}
     std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override;
 };
 
-// I/O (New)
+// I/O
 class PrintI : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; };
+class PrintS : public Instruction { public: std::vector<uint8_t> emit(const AssemblyUnit &unit, RelocationEntry &reloc) const override; }; // NEW
 
 
 // --- ObjectFile Class (for Linker) ---

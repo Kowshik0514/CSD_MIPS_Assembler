@@ -1,0 +1,40 @@
+--- Assembly Listing ---
+Source file: string.stkasm
+
+--- .text section ---
+Address  | Bytes                | Source Line
+------------------------------------------------------------------
+0x00000000 | 01 7b 00 00 00       | iconst 123
+0x50000000 | 09 00 00 00 00       | istore 0
+0xa0000000 | 01 03 00 00 00       | iconst 3
+0xf0000000 | 13                   | NEW_STRING
+0x10000000 | 09 01 00 00 00       | istore 1
+0x15000000 | 0a 01 00 00 00       | iload 1
+0x1a000000 | 01 00 00 00 00       | iconst 0
+0x1f000000 | 01 48 00 00 00       | iconst 72
+0x24000000 | 14                   | SET_CHAR
+0x25000000 | 0a 01 00 00 00       | iload 1
+0x2a000000 | 01 01 00 00 00       | iconst 1
+0x2f000000 | 01 69 00 00 00       | iconst 105
+0x34000000 | 14                   | SET_CHAR
+0x35000000 | 0a 01 00 00 00       | iload 1
+0x3a000000 | 01 02 00 00 00       | iconst 2
+0x3f000000 | 01 00 00 00 00       | iconst 0
+0x44000000 | 14                   | SET_CHAR
+0x45000000 | 0a 01 00 00 00       | iload 1
+0x4a000000 | 09 02 00 00 00       | istore 2
+0x4f000000 | 0a 00 00 00 00       | iload 0
+0x54000000 | 30                   | PRINT_I
+0x55000000 | 0a 02 00 00 00       | iload 2
+0x5a000000 | 31                   | PRINT_S
+0x5b000000 | 01 00 00 00 00       | iconst 0
+0x60000000 | 06                   | ret
+
+--- .data section ---
+Address  | Bytes             | Definition
+--------------------------------------------------------
+
+--- Symbol Table ---
+Name           | Type | Binding | Def | Address
+--------------------------------------------------------
+main           | TEXT | GLOBAL  | yes | 0x00000000
