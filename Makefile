@@ -19,7 +19,7 @@ VALIDATOR_SRCS = validator.cpp src/parser.cpp src/emitter.cpp
 VALIDATOR_OBJS = $(VALIDATOR_SRCS:.cpp=.o)
 VALIDATOR_TARGET = validator
 
-# --- Target 3: The Linker ---
+# --- Target 3: The Linker (NEW) ---
 # It needs its main file and the linker logic file.
 LINKER_SRCS = linker_main.cpp src/linker.cpp
 LINKER_OBJS = $(LINKER_SRCS:.cpp=.o)
@@ -49,3 +49,4 @@ $(LINKER_TARGET): $(LINKER_OBJS)
 clean:
 	rm -f src/*.o *.o $(ASSEMBLER_TARGET) $(VALIDATOR_TARGET) $(LINKER_TARGET) *.vm *.o
 # 	rm -rf outputs
+# 	rm -rf linker_outputs

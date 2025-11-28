@@ -1,10 +1,12 @@
 --- Assembly Listing ---
-Source file: math.stkasm
+Source file: main.stkasm
 
 --- .text section ---
 Address  | Bytes                | Source Line
 ------------------------------------------------------------------
-0x00000000 | 04                   | imul
+0x00000000 | 01 07 00 00 00       | iconst 7
+0x50000000 | 01 06 00 00 00       | iconst 6
+0xa0000000 | 08 00 00 00 00 02    | invoke multiply 2 # Call the function
 0x10000000 | 06                   | ret
 
 --- .data section ---
@@ -14,4 +16,5 @@ Address  | Bytes             | Definition
 --- Symbol Table ---
 Name           | Type | Binding | Def | Address
 --------------------------------------------------------
-multiply       | TEXT | GLOBAL  | yes | 0x00000000
+main           | TEXT | GLOBAL  | yes | 0x00000000
+multiply       | TEXT | GLOBAL  | no  | 0x00000000

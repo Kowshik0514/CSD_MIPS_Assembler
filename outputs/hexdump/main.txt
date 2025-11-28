@@ -1,0 +1,24 @@
+// --- Header (20 bytes) ---
+4f415453       // Magic Number: "STAO" (0x5354414f)
+11 00 00 00  // Code Section Size: 17 bytes
+00 00 00 00  // Data Section Size: 0 bytes
+26 00 00 00  // Symbol Table Size: 38 bytes
+14 00 00 00  // Relocation Table Size: 20 bytes
+
+// --- Code Section (17 bytes) ---
+// main: (address 0x0)
+01 07 00 00 00  // iconst 7
+01 06 00 00 00  // iconst 6
+08 00 00 00 00 02  // invoke multiply 2 # Call the function
+06  // ret
+
+// --- Data Section (0 bytes) ---
+// (Empty)
+
+// --- Symbol Table Section (38 bytes) ---
+// (Raw symbol table data follows...)
+02 00 00 00 04 00 00 00 6d 61 69 6e 00 01 01 00 00 00 00 08 00 00 00 6d 75 6c 74 69 70 6c 79 00 01 00 00 00 00 00 
+
+// --- Relocation Table Section (20 bytes) ---
+// (Raw relocation table data follows...)
+01 00 00 00 0b 00 00 00 08 00 00 00 6d 75 6c 74 69 70 6c 79 

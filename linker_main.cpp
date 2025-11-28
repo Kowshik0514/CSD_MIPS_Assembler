@@ -1,34 +1,127 @@
 // File: linker_main.cpp
-// Owner: Your Team (e.g., Nishchith)
+// Owner: Your Team
 // Role: Linker Driver Program
-// Description: Parses arguments, reads .o files, invokes the linker, writes .vm file.
+// Description: Links .o files and generates .vm, .map.txt, and .hexdump.txt outputs.
 
 #include "structures.h" // Includes ObjectFile definition
-#include "linker.h"     // Includes link_objects definition
+#include "linker.h"     // Includes link_objects and LinkedProgram
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
+#include <filesystem>   // For creating directories (C++17)
+#include <iomanip>      // For formatting hex
+#include <map>
+
+namespace fs = std::filesystem;
+
+// --- Helper: Write the final .vm binary file ---
+void write_vm_file(const std::string& filepath, const LinkedProgram& program) {
+    std::ofstream outfile(filepath, std::ios::binary);
+    if (!outfile) {
+        throw std::runtime_error("Cannot open output file for writing: " + filepath);
+    }
+    outfile.write(reinterpret_cast<const char*>(program.vm_bytes.data()), program.vm_bytes.size());
+    outfile.close();
+}
+
+// --- Helper: Write the .map.txt file (Linker Map) ---
+void write_map_file(const std::string& filepath, const LinkedProgram& program) {
+    std::ofstream outfile(filepath);
+    if (!outfile) {
+        std::cerr << "Warning: Could not create map file: " << filepath << std::endl;
+        return;
+    }
+
+    outfile << "--- Linker Symbol Map ---" << std::endl;
+    outfile << "Entry Point (main): 0x" << std::hex << std::setw(8) << std::setfill('0') << program.entry_point << std::dec << std::endl;
+    outfile << std::endl;
+    outfile << "Final Code Section Size: " << program.final_code_size << " bytes" << std::endl;
+    outfile << "Final Data Section Size: " << program.final_data_size << " bytes" << std::endl;
+    outfile << std::endl;
+    outfile << "--- Global Symbols ---" << std::endl;
+    outfile << "Address    | Name" << std::endl;
+    outfile << "-----------------------------" << std::endl;
+    
+    // Sort the map by address for a cleaner output
+    std::map<uint32_t, std::string> sorted_symbols;
+    for (const auto& pair : program.symbol_table) {
+        sorted_symbols[pair.second] = pair.first;
+    }
+
+    for (const auto& pair : sorted_symbols) {
+        outfile << "0x" << std::hex << std::setw(8) << std::setfill('0') << pair.first << " | " << pair.second << std::endl;
+    }
+    outfile.close();
+    std::cout << "Map file successful: Generated " << filepath << std::endl;
+}
+
+// --- Helper: Write the simple .hexdump.txt file ---
+void write_hexdump_file(const std::string& filepath, const LinkedProgram& program) {
+    std::ofstream outfile(filepath);
+    if (!outfile) {
+        std::cerr << "Warning: Could not create hexdump file: " << filepath << std::endl;
+        return;
+    }
+
+    outfile << "--- .vm Hexdump ---" << std::endl;
+    outfile << "Address  | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F" << std::endl;
+    outfile << "----------------------------------------------------------" << std::endl;
+    
+    outfile << std::hex << std::setfill('0');
+    for (size_t i = 0; i < program.vm_bytes.size(); ++i) {
+        if (i % 16 == 0) {
+            if (i > 0) outfile << std::endl;
+            outfile << "0x" << std::setw(8) << i << " | ";
+        }
+        outfile << std::setw(2) << static_cast<int>(program.vm_bytes[i]) << " ";
+    }
+    outfile << std::endl;
+    outfile.close();
+    std::cout << "Hexdump file successful: Generated " << filepath << std::endl;
+}
 
 int main(int argc, char* argv[]) {
-    // Basic argument parsing: linker input1.o input2.o ... -o output.vm
-    if (argc < 4 || std::string(argv[argc - 2]) != "-o") {
-        std::cerr << "Usage: " << argv[0] << " <input1.o> [input2.o ...] -o <output.vm>" << std::endl;
+    // Updated argument parsing: linker -o <output_basename> <input1.o> [input2.o ...]
+    if (argc < 5 || std::string(argv[1]) != "-o") {
+        std::cerr << "Usage: " << argv[0] << " -o <output_basename> <input1.o> [input2.o ...]" << std::endl;
+        std::cerr << "Example: " << argv[0] << " -o program outputs/o/main.o outputs/o/math.o" << std::endl;
+        std::cerr << "This will generate outputs in the 'linker_outputs/' directory." << std::endl;
         return 1;
     }
 
+    std::string output_basename = argv[2];
     std::vector<std::string> input_files;
-    for (int i = 1; i < argc - 2; ++i) {
+    for (int i = 3; i < argc; ++i) {
         input_files.push_back(argv[i]);
     }
-    std::string output_file = argv[argc - 1];
 
-    std::cout << "Linking " << input_files.size() << " object file(s) -> '" << output_file << "'..." << std::endl;
+    // --- NEW: Create output directory structure ---
+    std::string base_output_dir = "linker_outputs";
+    std::string vm_dir = base_output_dir + "/vm";
+    std::string map_dir = base_output_dir + "/map";
+    std::string hexdump_dir = base_output_dir + "/hexdump";
+    
+    try {
+        fs::create_directories(vm_dir);
+        fs::create_directories(map_dir);
+        fs::create_directories(hexdump_dir);
+    } catch (const std::exception& e) {
+        std::cerr << "Error creating output directories: " << e.what() << std::endl;
+        return 1;
+    }
+    
+    // Define final output paths
+    std::string output_vm_file = vm_dir + "/" + output_basename + ".vm";
+    std::string output_map_file = map_dir + "/" + output_basename + ".map.txt";
+    std::string output_hexdump_file = hexdump_dir + "/" + output_basename + ".hexdump.txt";
+
+    std::cout << "Linking " << input_files.size() << " object file(s) -> '" << output_basename << "'..." << std::endl;
 
     try {
         // 1. Read all specified object files into memory
         std::vector<ObjectFile> objects;
-        objects.reserve(input_files.size()); // Optimize vector allocation
+        objects.reserve(input_files.size());
         for (const auto& file_path : input_files) {
             std::cout << "   Reading object file: " << file_path << std::endl;
             objects.push_back(ObjectFile::read_from(file_path));
@@ -36,23 +129,22 @@ int main(int argc, char* argv[]) {
 
         // 2. Call the main linker function
         std::cout << "   Performing linking and relocation..." << std::endl;
-        std::vector<uint8_t> executable_bytecode = link_objects(objects);
-        std::cout << "   Linking successful. Final executable size: " << executable_bytecode.size() << " bytes." << std::endl;
+        LinkedProgram final_program = link_objects(objects);
+        std::cout << "   Linking successful. Final .vm size: " << final_program.vm_bytes.size() << " bytes." << std::endl;
 
-        // 3. Write the final executable file
-        std::ofstream outfile(output_file, std::ios::binary);
-        if (!outfile) {
-            throw std::runtime_error("Cannot open output file '" + output_file + "' for writing.");
-        }
-        outfile.write(reinterpret_cast<const char*>(executable_bytecode.data()), executable_bytecode.size());
-        outfile.close(); // Ensure file is closed properly
+        // 3. Write all output files
+        std::cout << "   Writing .vm file: " << output_vm_file << std::endl;
+        write_vm_file(output_vm_file, final_program);
+        
+        write_map_file(output_map_file, final_program);
+        write_hexdump_file(output_hexdump_file, final_program);
 
-        std::cout << "Linker finished successfully." << std::endl;
+        std::cout << "Linker finished successfully. Outputs are in 'linker_outputs/'" << std::endl;
 
     } catch (const std::runtime_error& e) {
         std::cerr << "Linker failed: " << e.what() << std::endl;
-        return 1; // Indicate failure
+        return 1;
     }
 
-    return 0; // Indicate success
+    return 0;
 }
