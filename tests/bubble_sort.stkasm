@@ -134,6 +134,7 @@ kik:
     iconst 8
     iconst 0
     SET_CHAR
+    iload 4
     PRINT_S
     iconst 0
     istore 2
@@ -165,6 +166,7 @@ kik:
     iconst 1
     iconst 0
     SET_CHAR
+    iload 5
     PRINT_S
     jmp #L14
 #L13:

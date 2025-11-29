@@ -1,0 +1,11 @@
+--- Linker Symbol Map ---
+Entry Point (main): 0x00000000
+
+Final Code Section Size: 19 bytes
+Final Data Section Size: 0 bytes
+
+--- Global Symbols ---
+Address    | Name
+-----------------------------
+0x00000000 | main
+0x00000011 | multiply

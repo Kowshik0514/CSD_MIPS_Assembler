@@ -1,11 +1,11 @@
 // --- Header (20 bytes) ---
 4f415453       // Magic Number: "STAO" (0x5354414f)
-54 02 00 00  // Code Section Size: 596 bytes
+5e 02 00 00  // Code Section Size: 606 bytes
 00 00 00 00  // Data Section Size: 0 bytes
-12 00 00 00  // Symbol Table Size: 18 bytes
+e9 00 00 00  // Symbol Table Size: 233 bytes
 04 00 00 00  // Relocation Table Size: 4 bytes
 
-// --- Code Section (596 bytes) ---
+// --- Code Section (606 bytes) ---
 // kik: (address 0x0)
 01 05 00 00 00  // iconst 5
 10  // NEW_ARRAY
@@ -32,30 +32,36 @@
 11  // SET_ELEM
 01 00 00 00 00  // iconst 0
 09 02 00 00 00  // istore 2
+// #L0: (address 0x65)
 0a 02 00 00 00  // iload 2
 01 04 00 00 00  // iconst 4
 21  // icmp_lt
-24 00 00 00 00  // jnz #L1
-07 00 00 00 00  // jmp #L2
+24 8f 00 00 00  // jnz #L1
+07 41 01 00 00  // jmp #L2
+// #L3: (address 0x7a)
 0a 02 00 00 00  // iload 2
 01 01 00 00 00  // iconst 1
 02  // iadd
 09 02 00 00 00  // istore 2
-07 00 00 00 00  // jmp #L0
+07 65 00 00 00  // jmp #L0
+// #L1: (address 0x8f)
 01 00 00 00 00  // iconst 0
 09 03 00 00 00  // istore 3
+// #L4: (address 0x99)
 01 04 00 00 00  // iconst 4
 0a 02 00 00 00  // iload 2
 03  // isub
 0a 03 00 00 00  // iload 3
 21  // icmp_lt
-24 00 00 00 00  // jnz #L5
-07 00 00 00 00  // jmp #L6
+24 c9 00 00 00  // jnz #L5
+07 3c 01 00 00  // jmp #L6
+// #L7: (address 0xb4)
 0a 03 00 00 00  // iload 3
 01 01 00 00 00  // iconst 1
 02  // iadd
 09 03 00 00 00  // istore 3
-07 00 00 00 00  // jmp #L4
+07 99 00 00 00  // jmp #L4
+// #L5: (address 0xc9)
 0a 00 00 00 00  // iload 0
 0a 03 00 00 00  // iload 3
 12  // GET_ELEM
@@ -65,8 +71,9 @@
 0a 00 00 00 00  // iload 0
 12  // GET_ELEM
 22  // icmp_gt
-24 00 00 00 00  // jnz #L9
-07 00 00 00 00  // jmp #L10
+24 f0 00 00 00  // jnz #L9
+07 37 01 00 00  // jmp #L10
+// #L9: (address 0xf0)
 0a 00 00 00 00  // iload 0
 0a 03 00 00 00  // iload 3
 12  // GET_ELEM
@@ -85,9 +92,12 @@
 0a 00 00 00 00  // iload 0
 0a 01 00 00 00  // iload 1
 11  // SET_ELEM
-07 00 00 00 00  // jmp #L8
-07 00 00 00 00  // jmp #L7
-07 00 00 00 00  // jmp #L3
+07 37 01 00 00  // jmp #L8
+// #L10: (address 0x137)
+07 b4 00 00 00  // jmp #L7
+// #L6: (address 0x13c)
+07 7a 00 00 00  // jmp #L3
+// #L2: (address 0x141)
 01 09 00 00 00  // iconst 9
 13  // NEW_STRING
 09 04 00 00 00  // istore 4
@@ -127,19 +137,23 @@
 01 08 00 00 00  // iconst 8
 01 00 00 00 00  // iconst 0
 14  // SET_CHAR
+0a 04 00 00 00  // iload 4
 31  // PRINT_S
 01 00 00 00 00  // iconst 0
 09 02 00 00 00  // istore 2
+// #L11: (address 0x1ec)
 0a 02 00 00 00  // iload 2
 01 05 00 00 00  // iconst 5
 21  // icmp_lt
-24 00 00 00 00  // jnz #L12
-07 00 00 00 00  // jmp #L13
+24 16 02 00 00  // jnz #L12
+07 58 02 00 00  // jmp #L13
+// #L14: (address 0x201)
 0a 02 00 00 00  // iload 2
 01 01 00 00 00  // iconst 1
 02  // iadd
 09 02 00 00 00  // istore 2
-07 00 00 00 00  // jmp #L11
+07 ec 01 00 00  // jmp #L11
+// #L12: (address 0x216)
 0a 00 00 00 00  // iload 0
 0a 02 00 00 00  // iload 2
 12  // GET_ELEM
@@ -155,17 +169,19 @@
 01 01 00 00 00  // iconst 1
 01 00 00 00 00  // iconst 0
 14  // SET_CHAR
+0a 05 00 00 00  // iload 5
 31  // PRINT_S
-07 00 00 00 00  // jmp #L14
+07 01 02 00 00  // jmp #L14
+// #L13: (address 0x258)
 01 00 00 00 00  // iconst 0
 06  // ret
 
 // --- Data Section (0 bytes) ---
 // (Empty)
 
-// --- Symbol Table Section (18 bytes) ---
+// --- Symbol Table Section (233 bytes) ---
 // (Raw symbol table data follows...)
-01 00 00 00 03 00 00 00 6b 69 6b 00 01 01 00 00 00 00 
+10 00 00 00 03 00 00 00 6b 69 6b 00 01 01 00 00 00 00 03 00 00 00 23 4c 30 00 00 01 65 00 00 00 03 00 00 00 23 4c 33 00 00 01 7a 00 00 00 03 00 00 00 23 4c 31 00 00 01 8f 00 00 00 03 00 00 00 23 4c 34 00 00 01 99 00 00 00 03 00 00 00 23 4c 37 00 00 01 b4 00 00 00 03 00 00 00 23 4c 35 00 00 01 c9 00 00 00 03 00 00 00 23 4c 39 00 00 01 f0 00 00 00 04 00 00 00 23 4c 31 30 00 00 01 37 01 00 00 03 00 00 00 23 4c 38 00 00 01 37 01 00 00 03 00 00 00 23 4c 36 00 00 01 3c 01 00 00 03 00 00 00 23 4c 32 00 00 01 41 01 00 00 04 00 00 00 23 4c 31 31 00 00 01 ec 01 00 00 04 00 00 00 23 4c 31 34 00 00 01 01 02 00 00 04 00 00 00 23 4c 31 32 00 00 01 16 02 00 00 04 00 00 00 23 4c 31 33 00 00 01 58 02 00 00 
 
 // --- Relocation Table Section (4 bytes) ---
 // (Raw relocation table data follows...)

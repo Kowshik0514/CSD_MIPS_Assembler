@@ -1,5 +1,5 @@
 // --- Header (20 bytes) ---
-4f415453       // Magic Number: "STAO" (0x5354414f)
+4f 41 54 53       // Magic Number: "STAO" (0x5354414f)
 02 00 00 00  // Code Section Size: 2 bytes
 00 00 00 00  // Data Section Size: 0 bytes
 17 00 00 00  // Symbol Table Size: 23 bytes
@@ -14,10 +14,7 @@
 // (Empty)
 
 // --- Symbol Table Section (23 bytes) ---
-// (Raw symbol table data follows...)
 01 00 00 00 08 00 00 00 6d 75 6c 74 69 70 6c 79 00 01 01 00 00 00 00 
 
 // --- Relocation Table Section (4 bytes) ---
-// (Raw relocation table data follows...)
 00 00 00 00 
-// (No relocation entries)

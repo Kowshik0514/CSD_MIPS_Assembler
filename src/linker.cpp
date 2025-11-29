@@ -1,7 +1,7 @@
 // File: linker.cpp
-// Owner: Your Team (e.g., Rashmitha, Kowshik)
+// Owner: Your Team
 // Role: Linker Logic Implementation
-// Description: Implements object file reading and the core linking algorithm.
+// Description: Implements object file reading (from text hex dumps) and the core linking algorithm.
 
 #include "linker.h"
 #include <stdexcept>
@@ -10,13 +10,12 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <sstream>
+#include <iomanip>
 
-// --- Helper functions for binary reading ---
-// (These must be identical to the helpers in your assembler's emitter.cpp)
 int32_t read_int32(const std::vector<uint8_t>& data, size_t& offset) {
     if (offset + 4 > data.size()) throw std::runtime_error("Read past end of buffer (int32)");
     int32_t value = 0;
-    // Little-endian read
     value |= static_cast<int32_t>(data[offset + 0]) << 0;
     value |= static_cast<int32_t>(data[offset + 1]) << 8;
     value |= static_cast<int32_t>(data[offset + 2]) << 16;
@@ -27,173 +26,159 @@ int32_t read_int32(const std::vector<uint8_t>& data, size_t& offset) {
 
 std::string read_string(const std::vector<uint8_t>& data, size_t& offset) {
     int32_t len = read_int32(data, offset);
-     if (len < 0 || offset + len > data.size()) {
-         throw std::runtime_error("Invalid string length encountered during read");
-     }
+    if (len < 0 || offset + len > data.size()) throw std::runtime_error("Invalid string length");
     std::string str(data.begin() + offset, data.begin() + offset + len);
     offset += len;
     return str;
 }
 
-// --- Implementation of the ObjectFile reader ---
-// This parses the .o file format your assembler creates
-ObjectFile ObjectFile::read_from(const std::string& filepath) {
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate); // Open at end to get size
-    if (!file) throw std::runtime_error("Cannot open object file: " + filepath);
+// --- IMPROVED: Robustly parse text hex dump ---
+std::vector<uint8_t> parse_hexdump_file(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) throw std::runtime_error("Cannot open hex dump file: " + filepath);
 
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg); // Go back to start
-    std::vector<uint8_t> buffer(size);
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-        throw std::runtime_error("Failed to read object file: " + filepath);
+    std::vector<uint8_t> buffer;
+    std::string line;
+    while (std::getline(file, line)) {
+        // Remove comments
+        size_t comment_pos = line.find("//");
+        if (comment_pos != std::string::npos) {
+            line = line.substr(0, comment_pos);
+        }
+        
+        std::stringstream ss(line);
+        std::string token;
+        while (ss >> token) {
+            // Process token. It might be "4F" or "4F415453". 
+            // Iterate in chunks of 2.
+            for (size_t i = 0; i + 1 < token.length(); i += 2) {
+                std::string hex_pair = token.substr(i, 2);
+                try {
+                    if (std::isxdigit(hex_pair[0]) && std::isxdigit(hex_pair[1])) {
+                        int byte_val = std::stoi(hex_pair, nullptr, 16);
+                        buffer.push_back(static_cast<uint8_t>(byte_val));
+                    }
+                } catch (...) {
+                    // Ignore invalid pairs
+                }
+            }
+        }
     }
-    file.close();
+    return buffer;
+}
+
+ObjectFile ObjectFile::read_from(const std::string& filepath) {
+    std::cout << "DEBUG: Parsing text hex dump: " << filepath << std::endl;
+    std::vector<uint8_t> buffer = parse_hexdump_file(filepath);
+    
+    if (buffer.empty()) throw std::runtime_error("File is empty or invalid format: " + filepath);
 
     ObjectFile obj;
     size_t offset = 0;
 
     // Read header (20 bytes)
+    if (buffer.size() < 20) throw std::runtime_error("Invalid object file: too small");
     uint32_t magic = read_int32(buffer, offset);
-    if (magic != 0x5354414F) throw std::runtime_error("Invalid object file magic number (expected STAO): " + filepath);
+    if (magic != 0x5354414F) {
+        std::cerr << "Read Magic: 0x" << std::hex << magic << std::endl;
+        throw std::runtime_error("Invalid object file magic number (expected STAO): " + filepath);
+    }
 
     uint32_t code_size = read_int32(buffer, offset);
     uint32_t data_size = read_int32(buffer, offset);
     uint32_t sym_section_size = read_int32(buffer, offset);
     uint32_t reloc_section_size = read_int32(buffer, offset);
 
-    // Read sections into the ObjectFile struct
-    if (offset + code_size > buffer.size()) throw std::runtime_error("Code section size exceeds buffer in: " + filepath);
+    if (offset + code_size > buffer.size()) throw std::runtime_error("Code section size error");
     obj.code_section.assign(buffer.begin() + offset, buffer.begin() + offset + code_size);
     offset += code_size;
 
-    if (offset + data_size > buffer.size()) throw std::runtime_error("Data section size exceeds buffer in: " + filepath);
+    if (offset + data_size > buffer.size()) throw std::runtime_error("Data section size error");
     obj.data_section.assign(buffer.begin() + offset, buffer.begin() + offset + data_size);
     offset += data_size;
 
-    // Read Symbol Table
-    size_t sym_table_start_offset = offset;
+    // Read Symbols
+    size_t sym_start = offset;
     int32_t sym_count = read_int32(buffer, offset);
-    obj.symbol_table.reserve(sym_count);
     for (int i = 0; i < sym_count; ++i) {
         Symbol sym;
         sym.name = read_string(buffer, offset);
         sym.type = static_cast<Symbol::Type>(buffer[offset++]);
         sym.binding = static_cast<Symbol::Binding>(buffer[offset++]);
-        sym.is_defined = static_cast<bool>(buffer[offset++]); // Read the flag
+        sym.is_defined = static_cast<bool>(buffer[offset++]);
         sym.address = read_int32(buffer, offset);
         obj.symbol_table.push_back(sym);
     }
-    if (offset - sym_table_start_offset != sym_section_size) {
-         throw std::runtime_error("Symbol table size mismatch in file: " + filepath);
-    }
+    if (offset - sym_start != sym_section_size) throw std::runtime_error("Symbol table mismatch");
 
-    // Read Relocation Table
-    size_t reloc_table_start_offset = offset;
+    // Read Relocations
+    size_t reloc_start = offset;
     int32_t reloc_count = read_int32(buffer, offset);
-    obj.relocation_table.reserve(reloc_count);
     for (int i = 0; i < reloc_count; ++i) {
         RelocationEntry reloc;
         reloc.offset = read_int32(buffer, offset);
         reloc.target_symbol = read_string(buffer, offset);
         obj.relocation_table.push_back(reloc);
     }
-    if (offset - reloc_table_start_offset != reloc_section_size) {
-         throw std::runtime_error("Relocation table size mismatch in file: " + filepath);
-    }
+    if (offset - reloc_start != reloc_section_size) throw std::runtime_error("Reloc table mismatch");
 
     return obj;
 }
 
-
-// --- Main Linker Logic ---
 LinkedProgram link_objects(const std::vector<ObjectFile>& objects) {
-    std::vector<uint8_t> final_code_section;
-    std::vector<uint8_t> final_data_section;
-    GlobalSymbolTable global_symbol_table;
+    std::vector<uint8_t> final_code;
+    std::vector<uint8_t> final_data;
+    GlobalSymbolTable global_table;
+    uint32_t code_base = 0;
+    uint32_t data_base = 0;
 
-    uint32_t current_code_base_offset = 0;
-    uint32_t current_data_base_offset = 0;
-
-    // 1. First Pass: Calculate offsets and build the global symbol table
+    // Pass 1: Build Symbol Table
     for (const auto& obj : objects) {
-        // Build global symbol table for DEFINED global symbols
         for (const auto& sym : obj.symbol_table) {
-            // Only add defined global symbols to the master table
             if (sym.binding == Symbol::Binding::GLOBAL && sym.is_defined) {
-                if (global_symbol_table.count(sym.name)) {
-                    throw std::runtime_error("Duplicate global symbol definition: " + sym.name);
-                }
-                // Calculate the final absolute address
-                uint32_t final_address = (sym.type == Symbol::Type::TEXT)
-                    ? current_code_base_offset + sym.address
-                    : current_data_base_offset + sym.address;
-                global_symbol_table[sym.name] = final_address;
+                if (global_table.count(sym.name)) throw std::runtime_error("Duplicate: " + sym.name);
+                uint32_t addr = (sym.type == Symbol::Type::TEXT) ? code_base + sym.address : data_base + sym.address;
+                global_table[sym.name] = addr;
             }
         }
-        // Keep track of base offsets for the next file
-        current_code_base_offset += obj.code_section.size();
-        current_data_base_offset += obj.data_section.size();
+        code_base += obj.code_section.size();
+        data_base += obj.data_section.size();
     }
 
-    // 2. Second Pass: Perform relocation and merge sections
-    current_code_base_offset = 0; // Reset
+    // Pass 2: Relocate & Merge
+    code_base = 0;
     for (const auto& obj : objects) {
-        std::vector<uint8_t> patched_code = obj.code_section; // Make a copy to modify
-
-        // Apply relocations for this object file
+        std::vector<uint8_t> patched = obj.code_section;
         for (const auto& reloc : obj.relocation_table) {
-            // Find the target symbol in the global table
-            auto it = global_symbol_table.find(reloc.target_symbol);
-            if (it == global_symbol_table.end()) {
-                throw std::runtime_error("Undefined global symbol referenced: " + reloc.target_symbol);
-            }
-            uint32_t final_address = it->second;
-
-            // Patch the 4-byte address into the code section copy
-            if (reloc.offset + 4 > patched_code.size()) {
-                throw std::runtime_error("Relocation offset out of bounds for symbol: " + reloc.target_symbol);
-            }
-            // Write the address in little-endian format
-            patched_code[reloc.offset + 0] = (final_address >> 0)  & 0xFF;
-            patched_code[reloc.offset + 1] = (final_address >> 8)  & 0xFF;
-            patched_code[reloc.offset + 2] = (final_address >> 16) & 0xFF;
-            patched_code[reloc.offset + 3] = (final_address >> 24) & 0xFF;
+            auto it = global_table.find(reloc.target_symbol);
+            if (it == global_table.end()) throw std::runtime_error("Undefined: " + reloc.target_symbol);
+            uint32_t val = it->second;
+            // Patch 4 bytes
+            if(reloc.offset + 4 > patched.size()) throw std::runtime_error("Reloc bounds error");
+            patched[reloc.offset+0] = (val >> 0) & 0xFF;
+            patched[reloc.offset+1] = (val >> 8) & 0xFF;
+            patched[reloc.offset+2] = (val >> 16) & 0xFF;
+            patched[reloc.offset+3] = (val >> 24) & 0xFF;
         }
-
-        // Add the now-patched code to the final binary
-        final_code_section.insert(final_code_section.end(), patched_code.begin(), patched_code.end());
-        // Append this object's data section
-        final_data_section.insert(final_data_section.end(), obj.data_section.begin(), obj.data_section.end());
-
-        current_code_base_offset += obj.code_section.size();
+        final_code.insert(final_code.end(), patched.begin(), patched.end());
+        final_data.insert(final_data.end(), obj.data_section.begin(), obj.data_section.end());
+        code_base += obj.code_section.size();
     }
 
-    // 3. Create the final .vm executable file content
-    std::vector<uint8_t> final_executable_bytes;
-    uint32_t magic_number = 0x5354414B; // "STAK" (VM executable magic number)
-
-    if (!global_symbol_table.count("main")) {
-        throw std::runtime_error("Entry point 'main' not found.");
-    }
-    uint32_t entry_point = global_symbol_table.at("main");
-
-    // Write header for .vm file (Magic Number + Entry Point Address)
-    for (int i = 0; i < 4; i++) final_executable_bytes.push_back((magic_number >> (i * 8)) & 0xFF);
-    for (int i = 0; i < 4; i++) final_executable_bytes.push_back((entry_point >> (i * 8)) & 0xFF);
-
-    // Append the final merged and patched code section
-    final_executable_bytes.insert(final_executable_bytes.end(), final_code_section.begin(), final_code_section.end());
-
-    // Append the final merged data section
-    final_executable_bytes.insert(final_executable_bytes.end(), final_data_section.begin(), final_data_section.end());
-
-    // 4. Create the LinkedProgram struct to return
-    LinkedProgram result;
-    result.vm_bytes = final_executable_bytes;
-    result.symbol_table = global_symbol_table;
-    result.entry_point = entry_point;
-    result.final_code_size = final_code_section.size();
-    result.final_data_size = final_data_section.size();
-
-    return result;
+    LinkedProgram res;
+    uint32_t magic = 0x5354414B;
+    if (!global_table.count("main")) throw std::runtime_error("No 'main' entry point");
+    uint32_t entry = global_table["main"];
+    
+    // Header
+    for(int i=0; i<4; i++) res.vm_bytes.push_back((magic >> (i*8)) & 0xFF);
+    for(int i=0; i<4; i++) res.vm_bytes.push_back((entry >> (i*8)) & 0xFF);
+    res.vm_bytes.insert(res.vm_bytes.end(), final_code.begin(), final_code.end());
+    res.vm_bytes.insert(res.vm_bytes.end(), final_data.begin(), final_data.end());
+    
+    res.symbol_table = global_table;
+    res.entry_point = entry;
+    res.final_code_size = final_code.size();
+    res.final_data_size = final_data.size();
+    return res;
 }
